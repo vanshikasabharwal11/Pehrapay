@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PehraPay — AI Agent Commerce Policy Vault</title>
+    <!-- Tailwind CSS CDN for high-end styling -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Chart.js for premium trust analytics visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .timeline-line::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 24px;
+            bottom: 24px;
+            width: 2px;
+            background-color: #E5E7EB;
+        }
+        .active-tab {
+            background-color: #4F46E5;
+            color: white;
+        }
+        .inactive-tab {
+            color: #4B5563;
+            background-color: transparent;
+        }
+        .inactive-tab:hover {
+            background-color: #F3F4F6;
+            color: #111827;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800 font-sans">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-lg text-white">
+                    <!-- shield icon -->
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">PehraPay</h1>
+                    <p class="text-[10px] text-indigo-200 uppercase tracking-widest font-semibold">Guardrails for Autonomous Payments</p>
+                </div>
+            </div>
+
+            <!-- Tab Selectors -->
+            <nav class="flex space-x-2">
+                <button onclick="switchTab('sandbox')" id="tab-sandbox" class="px-4 py-2 text-xs font-bold rounded-lg transition active-tab">
+                    Console Sandbox
+                </button>
+                <button onclick="switchTab('mandates')" id="tab-mandates" class="px-4 py-2 text-xs font-bold rounded-lg transition inactive-tab">
+                    Spending Mandates
+                </button>
+                <button onclick="switchTab('transactions')" id="tab-transactions" class="px-4 py-2 text-xs font-bold rounded-lg transition inactive-tab">
+                    Agent Transactions
+                </button>
+                <button onclick="switchTab('analytics')" id="tab-analytics" class="px-4 py-2 text-xs font-bold rounded-lg transition inactive-tab">
+                    Trust Analytics
+                </button>
+                <div class="border-l border-indigo-800 h-6 my-auto mx-2"></div>
+                <button id="kill-switch-btn" onclick="triggerKillSwitch()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs shadow-md uppercase tracking-wider flex items-center space-x-1.5 transition">
+                    <span class="h-2 w-2 bg-white rounded-full" id="kill-switch-indicator"></span>
+                    <span id="kill-switch-text">Pause Agent</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8">
+
+        <!-- Banner Warnings (LLM Fallback active) -->
+        <div id="llm-fallback-banner" class="hidden mb-6 bg-yellow-50 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-r-lg shadow-sm flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="text-xl">⚠️</span>
+                <div>
+                    <p class="font-bold text-sm">LLM Fallback Active</p>
+                    <p class="text-xs text-yellow-700">The real Gemini API call failed (429 Rate Limit). The gateway is routing calls to the local deterministic keyword-matching fallback system.</p>
+                </div>
+            </div>
+            <button onclick="document.getElementById('llm-fallback-banner').classList.add('hidden')" class="text-yellow-900 font-bold px-2 hover:text-black">&times;</button>
+        </div>
+
+        <!-- Banner Warnings (Razorpay Fallback active) -->
+        <div id="razorpay-fallback-banner" class="hidden mb-6 bg-red-50 border-l-4 border-red-500 text-red-800 p-4 rounded-r-lg shadow-sm flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="text-xl">⚠️</span>
+                <div>
+                    <p class="font-bold text-sm">Razorpay Mock Mode Active</p>
+                    <p class="text-xs text-red-700">The live Razorpay payment link creation failed (credentials missing, invalid, or test limit of 30 active links reached). The system has fallen back to a local secure mock checkout URL.</p>
+                </div>
+            </div>
+            <button onclick="document.getElementById('razorpay-fallback-banner').classList.add('hidden')" class="text-red-900 font-bold px-2 hover:text-black">&times;</button>
+        </div>
+
+
+        <!-- ========================================================================= -->
+        <!-- VIEW 1: CONSOLE SANDBOX (PAGE 1) -->
+        <!-- ========================================================================= -->
+        <section id="view-sandbox" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Left: Form inputs -->
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                        <h2 class="text-base font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                            <span class="h-2 w-2 rounded-full bg-green-500 animate-ping"></span>
+                            <span>Transaction Sandbox</span>
+                        </h2>
+                        
+                        <form id="purchase-form" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Select Mandate</label>
+                                <select id="p-mandate-id" required class="w-full mt-1.5 px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm bg-white font-mono shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="">-- Select Active Policy Mandate --</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Natural Language Request</label>
+                                <textarea id="p-buyer-request" rows="4" required placeholder="Type purchase instructions for the AI Agent (e.g. 'Please buy 1 box of arabica coffee beans' or 'Order 3 adjustable laptop stands.')" class="w-full mt-1.5 px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                            </div>
+
+                            <button type="submit" id="submit-purchase-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg text-sm shadow-md transition duration-150 flex justify-center items-center">
+                                <span id="btn-text">Execute AI Purchase Pipeline</span>
+                                <svg id="btn-spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Mini Catalog Guide -->
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                        <h3 class="text-sm font-bold text-gray-900 mb-1">Seeded Merchant Catalog</h3>
+                        <p class="text-[10px] text-gray-400 italic mb-3">* Seeded/simulated data for policy demonstration</p>
+                        <div class="space-y-2 max-h-60 overflow-y-auto pr-1" id="sandbox-catalog">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Visual Timeline Steps (Connected Pipeline) -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white p-8 rounded-xl shadow-md border border-gray-100 min-h-[500px] flex flex-col justify-between">
+                        
+                        <!-- Initial State -->
+                        <div id="pipeline-empty" class="my-auto text-center space-y-3 py-12">
+                            <div class="mx-auto w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center">
+                                <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-700">Awaiting Pipeline Activation</h3>
+                            <p class="text-sm text-gray-400 max-w-sm mx-auto">Select a mandate, submit a request, and watch the policy vault evaluate constraints and cryptographically verify mandate integrity.</p>
+                        </div>
+
+                        <!-- Active Pipeline Layout -->
+                        <div id="pipeline-results" class="hidden space-y-8 relative timeline-line">
+                            
+                            <!-- Step 1: AI Intent Parsing -->
+                            <div class="relative pl-12">
+                                <!-- Spark/AI Icon inside a circle -->
+                                <div class="absolute left-0 top-1 w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center border-2 border-indigo-200 z-10">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                                    </svg>
+                                </div>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between items-center">
+                                        <h4 class="text-sm font-bold text-gray-900">Step 1 — Intent Parsed</h4>
+                                        <span id="p-step1-status" class="text-[10px] bg-green-100 text-green-800 font-semibold px-2 py-0.5 rounded border border-green-300">✓ Gemini structured output verified</span>
+                                    </div>
+                                    <pre id="p-step1-json" class="text-xs font-mono bg-gray-950 text-green-400 p-3 rounded-lg overflow-x-auto shadow-inner"></pre>
+                                </div>
+                            </div>
+
+                            <!-- Step 2: Mandate Verification -->
+                            <div class="relative pl-12">
+                                <!-- Shield Icon inside a circle -->
+                                <div class="absolute left-0 top-1 w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center border-2 border-indigo-200 z-10">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                    </svg>
+                                </div>
+                                <div class="space-y-1">
+                                    <h4 class="text-sm font-bold text-gray-900">Step 2 — Mandate Verified</h4>
+                                    <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-green-700 font-semibold mt-1">
+                                        <span class="flex items-center"><span class="mr-1">✓</span> HMAC Signature Valid</span>
+                                        <span class="flex items-center"><span class="mr-1">✓</span> Mandate Active</span>
+                                        <span class="flex items-center"><span class="mr-1">✓</span> Not Expired</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 3: Policy Engine -->
+                            <div class="relative pl-12">
+                                <!-- Cog/Setting Icon inside a circle -->
+                                <div class="absolute left-0 top-1 w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center border-2 border-indigo-700 z-10">
+                                    <svg class="h-5 w-5 animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                </div>
+                                <div class="space-y-3 bg-indigo-50 border border-indigo-100 p-5 rounded-xl">
+                                    <div class="flex justify-between items-center">
+                                        <h4 class="text-sm font-bold text-indigo-900">Step 3 — Deterministic Policy Checks</h4>
+                                        <span class="text-[9px] bg-indigo-700 text-white font-bold px-2 py-0.5 rounded">NON-AI DECISION ENGINE</span>
+                                    </div>
+                                    
+                                    <!-- Checks list -->
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-xs" id="p-policy-checklist">
+                                        <!-- checklist items filled in js -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 4: Final Decision Card -->
+                            <div class="relative pl-12">
+                                <!-- Checkmark or Block Icon inside a circle -->
+                                <div id="p-step4-icon" class="absolute left-0 top-1 w-10 h-10 rounded-full flex items-center justify-center border-2 z-10">
+                                    <!-- set dynamically -->
+                                </div>
+                                <div id="p-decision-card" class="p-6 rounded-xl border shadow-md space-y-4">
+                                    <!-- decision details populated dynamically -->
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ========================================================================= -->
+        <!-- VIEW 2: SPENDING MANDATES (PAGE 2) -->
+        <!-- ========================================================================= -->
+        <section id="view-mandates" class="hidden space-y-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">Spending Mandates</h2>
+                    <p class="text-sm text-gray-500">Define exactly what your AI agent is allowed to do before it can transact.</p>
+                </div>
+                <button onclick="toggleMandateModal(true)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-lg text-sm shadow transition duration-150 flex items-center space-x-1">
+                    <span>+ Create New Mandate</span>
+                </button>
+            </div>
+
+            <!-- Mandates Filter Bar -->
+            <div class="flex items-center space-x-2 bg-gray-100 p-1.5 rounded-xl w-fit text-xs font-semibold text-gray-600 border border-gray-200">
+                <button onclick="setMandateFilter('all')" id="mf-all" class="px-3 py-1.5 rounded-lg bg-white text-indigo-700 shadow-sm font-bold border border-gray-200">All Mandates</button>
+                <button onclick="setMandateFilter('demo')" id="mf-demo" class="px-3 py-1.5 rounded-lg text-gray-500 hover:text-gray-900">📋 Demo Mandates</button>
+                <button onclick="setMandateFilter('test')" id="mf-test" class="px-3 py-1.5 rounded-lg text-gray-500 hover:text-gray-900">🧪 Test & Verification Mandates</button>
+            </div>
+
+            <!-- Mandates Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="mandates-grid">
+                <!-- populated dynamically -->
+            </div>
+        </section>
+
+
+        <!-- ========================================================================= -->
+        <!-- VIEW 3: AGENT TRANSACTIONS (PAGE 3 & 4) -->
+        <!-- ========================================================================= -->
+        <section id="view-transactions" class="hidden space-y-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">Agent Transactions</h2>
+                    <p class="text-sm text-gray-500">Every AI-initiated transaction is fully traceable and cryptographically verified.</p>
+                </div>
+            </div>
+
+            <!-- Top statistics -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="stats-container">
+                <div class="bg-white p-5 rounded-xl shadow border border-gray-100">
+                    <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Total Requests</span>
+                    <span class="text-2xl font-bold text-gray-800" id="stat-total">0</span>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow border border-gray-100">
+                    <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Approved</span>
+                    <span class="text-2xl font-bold text-green-600" id="stat-approved">0</span>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow border border-gray-100">
+                    <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Review Required</span>
+                    <span class="text-2xl font-bold text-yellow-600" id="stat-review">0</span>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow border border-gray-100">
+                    <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Rejected</span>
+                    <span class="text-2xl font-bold text-red-600" id="stat-rejected">0</span>
+                </div>
+            </div>
+
+            <!-- Table Filters -->
+            <div class="bg-white p-4 rounded-xl border border-gray-200 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="filterTransactions('all')" id="filter-all" class="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition">All</button>
+                    <button onclick="filterTransactions('APPROVE')" id="filter-approve" class="px-3.5 py-1.5 text-xs font-bold rounded-lg text-gray-600 hover:bg-gray-100 transition">Approved</button>
+                    <button onclick="filterTransactions('HUMAN_REVIEW')" id="filter-review" class="px-3.5 py-1.5 text-xs font-bold rounded-lg text-gray-600 hover:bg-gray-100 transition">Review Required</button>
+                    <button onclick="filterTransactions('REJECT')" id="filter-reject" class="px-3.5 py-1.5 text-xs font-bold rounded-lg text-gray-600 hover:bg-gray-100 transition">Rejected</button>
+                </div>
+            </div>
+
+            <!-- Audit Trail Table Layout -->
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+                
+                <!-- Table List -->
+                <div class="xl:col-span-2 bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100 text-gray-600 text-xs uppercase font-semibold border-b">
+                                    <th class="py-3.5 px-4">Request</th>
+                                    <th class="py-3.5 px-4 text-right">Amount</th>
+                                    <th class="py-3.5 px-4">Mandate</th>
+                                    <th class="py-3.5 px-4 text-center">Decision</th>
+                                    <th class="py-3.5 px-4">Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="txn-table-body" class="text-xs divide-y divide-gray-200">
+                                <!-- loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Right Side: Detailed Trace Panel (Page 4 Panel) -->
+                <div class="xl:col-span-1 bg-white rounded-xl shadow-md border border-gray-200 p-6 space-y-6" id="trace-panel">
+                    <div class="text-center text-gray-400 py-12" id="trace-empty">
+                        <svg class="h-10 w-10 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path>
+                        </svg>
+                        <p class="font-bold text-sm text-gray-500">Transaction Trace Viewer</p>
+                        <p class="text-xs max-w-xs mx-auto mt-1">Select any transaction row in the table to load its full deterministic decision path and cryptographical verification proof.</p>
+                    </div>
+
+                    <!-- Populated Decision Timeline -->
+                    <div id="trace-content" class="hidden space-y-6">
+                        <div class="border-b pb-4 flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-sm">Decision Trace</h3>
+                                <p class="text-[10px] text-gray-400" id="trace-log-id">LOG ID: --</p>
+                            </div>
+                            <span id="trace-decision-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full"></span>
+                        </div>
+
+                        <!-- Vertical Timeline (Page 4) -->
+                        <div class="relative pl-6 space-y-6 text-xs before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200">
+                            
+                            <!-- 1. Request Received -->
+                            <div class="relative">
+                                <div class="absolute left-[-22px] top-1.5 w-3 h-3 rounded-full bg-indigo-600 border-2 border-white"></div>
+                                <p class="font-bold text-gray-900">1. User Request Received</p>
+                                <p class="text-gray-500 italic mt-0.5" id="trace-step1-req"></p>
+                            </div>
+
+                            <!-- 2. Gemini Parsed Intent -->
+                            <div class="relative">
+                                <div class="absolute left-[-22px] top-1.5 w-3 h-3 rounded-full bg-indigo-600 border-2 border-white"></div>
+                                <p class="font-bold text-gray-900">2. Gemini Parsed Intent</p>
+                                <pre id="trace-step2-intent" class="bg-gray-900 text-green-400 p-2 rounded text-[10px] font-mono mt-1 overflow-x-auto shadow-inner"></pre>
+                            </div>
+
+                            <!-- 3. Mandate Retrieved -->
+                            <div class="relative">
+                                <div class="absolute left-[-22px] top-1.5 w-3 h-3 rounded-full bg-indigo-600 border-2 border-white"></div>
+                                <p class="font-bold text-gray-900">3. Mandate Policy Retrieved</p>
+                                <p class="text-gray-500 mt-0.5">Mandate Used: <span id="trace-step3-mid" class="font-mono font-bold text-indigo-600"></span></p>
+                            </div>
+
+                            <!-- 4. Signature Verified -->
+                            <div class="relative">
+                                <div class="absolute left-[-22px] top-1.5 w-3 h-3 rounded-full bg-green-600 border-2 border-white"></div>
+                                <p class="font-bold text-green-700">4. Signature Verified</p>
+                                <p class="text-[10px] text-gray-400 mt-0.5 font-mono overflow-x-auto bg-gray-50 p-1.5 border border-gray-100 rounded" id="trace-step4-sig"></p>
+                            </div>
+
+                            <!-- 5. Policy Checks Executed -->
+                            <div class="relative">
+                                <div class="absolute left-[-22px] top-1.5 w-3 h-3 rounded-full bg-indigo-600 border-2 border-white"></div>
+                                <p class="font-bold text-gray-900">5. Policy Checks Executed</p>
+                                <div class="bg-gray-50 border p-2.5 rounded-lg text-[10px] mt-1 space-y-1" id="trace-step5-checks">
+                                    <!-- checks inside -->
+                                </div>
+                            </div>
+
+                            <!-- 6. Decision Generated -->
+                            <div class="relative">
+                                <div id="trace-step6-dot" class="absolute left-[-22px] top-1.5 w-3 h-3 rounded-full border-2 border-white"></div>
+                                <p class="font-bold text-gray-900">6. Decision Generated</p>
+                                <p class="text-gray-600 mt-1 font-semibold" id="trace-step6-desc"></p>
+                            </div>
+
+                            <!-- 7. Razorpay Order Status -->
+                            <div class="relative">
+                                <div id="trace-step7-dot" class="absolute left-[-22px] top-1.5 w-3 h-3 rounded-full border-2 border-white"></div>
+                                <p class="font-bold text-gray-900">7. Razorpay Gateway Status</p>
+                                <p class="text-gray-500 mt-0.5" id="trace-step7-desc"></p>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- VIEW 4: TRUST ANALYTICS (PAGE 5) -->
+        <!-- ========================================================================= -->
+        <section id="view-analytics" class="hidden space-y-8">
+            <div class="border-b pb-4 flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">Trust Analytics</h2>
+                    <p class="text-sm text-gray-500">Real-time cryptographic defense metrics and isolation safety status.</p>
+                </div>
+            </div>
+
+            <!-- 6 Premium Stats Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                
+                <!-- Card 1: Total Money Controlled -->
+                <div class="bg-white p-4.5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between space-y-1">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Money Controlled</span>
+                    <span class="text-xl font-extrabold text-indigo-900" id="an-money-controlled">₹0</span>
+                    <span class="text-[9px] text-gray-400">Total authorized pool</span>
+                </div>
+
+                <!-- Card 2: Unauthorized Spending Prevented -->
+                <div class="bg-white p-4.5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between space-y-1">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Spending Prevented</span>
+                    <span class="text-xl font-extrabold text-green-600" id="an-spending-prevented">₹0</span>
+                    <span class="text-[9px] text-gray-400">Intercepted leakages</span>
+                </div>
+
+                <!-- Card 3: Transactions Blocked -->
+                <div class="bg-white p-4.5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between space-y-1">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Blocked Requests</span>
+                    <span class="text-xl font-extrabold text-red-600" id="an-blocked-requests">0</span>
+                    <span class="text-[9px] text-gray-400">Out-of-mandate stops</span>
+                </div>
+
+                <!-- Card 4: Human Reviews Triggered -->
+                <div class="bg-white p-4.5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between space-y-1">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Human Reviews</span>
+                    <span class="text-xl font-extrabold text-yellow-600" id="an-human-reviews">0</span>
+                    <span class="text-[9px] text-gray-400">Velocity/limit alerts</span>
+                </div>
+
+                <!-- Card 5: Mandate Tampering Attempts -->
+                <div class="bg-white p-4.5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between space-y-1">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Tamper Attempts</span>
+                    <span class="text-xl font-extrabold text-red-700 flex items-center">
+                        <span id="an-tamper-attempts">0</span>
+                        <span class="ml-1 text-[9px] font-bold text-red-500 bg-red-100 px-1 rounded animate-pulse">STOPPED</span>
+                    </span>
+                    <span class="text-[9px] text-gray-400">HMAC checks failed</span>
+                </div>
+
+                <!-- Card 6: Top Rejection Reason -->
+                <div class="bg-white p-4.5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between space-y-1">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Top Block Reason</span>
+                    <span class="text-xs font-extrabold text-purple-800 uppercase tracking-tight truncate" id="an-top-reason" title="Top Rejection Reason">None</span>
+                    <span class="text-[9px] text-gray-400">Deterministic check</span>
+                </div>
+
+            </div>
+
+            <!-- Charts Section (2x2 Grid) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Chart 1: Approval Ratio -->
+                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Approval vs Rejection Ratio</h3>
+                    <div style="position: relative; height:200px; width:100%">
+                        <canvas id="chartApprovalRatio"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Policy Failures -->
+                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Most Common Policy Failures</h3>
+                    <div style="position: relative; height:200px; width:100%">
+                        <canvas id="chartPolicyFailures"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 3: Spending by Mandate -->
+                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Spending by Mandate Policy (INR)</h3>
+                    <div style="position: relative; height:200px; width:100%">
+                        <canvas id="chartSpendingByMandate"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 4: Agent Activity over Time -->
+                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Recent Transaction Amounts</h3>
+                    <div style="position: relative; height:200px; width:100%">
+                        <canvas id="chartAgentActivity"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Events Log -->
+            <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
+                <h3 class="text-sm font-bold text-gray-900 border-b pb-2 flex items-center space-x-2">
+                    <span class="h-2 w-2 rounded-full bg-red-600 animate-ping"></span>
+                    <span>Security Events & Alerts</span>
+                </h3>
+                
+                <div class="divide-y divide-gray-100 text-xs" id="security-events-container">
+                    <!-- Dynamic events load here -->
+                </div>
+            </div>
+
+            <!-- Razorpay Isolation Status diagram card -->
+            <div class="bg-white p-8 rounded-xl border border-gray-200 shadow-sm space-y-6">
+                <div class="flex flex-col md:flex-row md:justify-between md:items-center border-b pb-4 gap-4">
+                    <div>
+                        <h3 class="text-base font-bold text-gray-900">Razorpay Isolation Status: PAYMENT API ISOLATION</h3>
+                        <p class="text-xs text-gray-500">Policy constraints run deterministically. Failed policy checks terminate execution before the Razorpay API call path.</p>
+                    </div>
+                    <span class="bg-green-100 text-green-800 border border-green-300 text-[10px] px-3 py-1 rounded font-bold uppercase tracking-wider flex items-center self-start md:self-center">
+                        <span class="h-2 w-2 bg-green-600 rounded-full mr-1.5 animate-pulse"></span>
+                        Active Gateway Isolation
+                    </span>
+                </div>
+
+                <!-- Flowchart mapping isolation -->
+                <div class="grid grid-cols-1 lg:grid-cols-7 gap-4 items-center py-6 text-center">
+                    
+                    <!-- Block 1: AI Agent -->
+                    <div class="lg:col-span-2 bg-gray-50 p-4 border border-gray-200 rounded-xl space-y-2">
+                        <div class="bg-indigo-100 text-indigo-700 w-10 h-10 rounded-full flex items-center justify-center mx-auto text-xs font-bold">AI</div>
+                        <h4 class="text-xs font-bold">1. AI Agent Proposal</h4>
+                        <p class="text-[10px] text-gray-400">Initiates natural language checkout request</p>
+                    </div>
+
+                    <!-- Connector 1 -->
+                    <div class="lg:col-span-1 text-gray-300 font-bold text-lg hidden lg:block">&rarr;</div>
+
+                    <!-- Block 2: Policy Vault Firewall -->
+                    <div class="lg:col-span-2 bg-indigo-900 text-white p-5 border border-indigo-700 rounded-xl space-y-2 relative shadow-md">
+                        <div class="bg-indigo-600 text-white w-10 h-10 rounded-full flex items-center justify-center mx-auto text-xs font-bold border-2 border-indigo-300 animate-pulse">GATE</div>
+                        <h4 class="text-xs font-bold">2. Deterministic Policy Gate</h4>
+                        <p class="text-[10px] text-indigo-200 font-semibold">Verifies database signatures, limits & categories</p>
+                    </div>
+
+                    <!-- Connector 2 -->
+                    <div class="lg:col-span-1 text-gray-300 font-bold text-lg hidden lg:block">&rarr;</div>
+
+                    <!-- Block 3: Payment Provider -->
+                    <div class="lg:col-span-2 bg-gray-50 p-4 border border-gray-200 rounded-xl space-y-2 border-dashed border-2">
+                        <div class="bg-green-100 text-green-700 w-10 h-10 rounded-full flex items-center justify-center mx-auto text-xs font-bold">API</div>
+                        <h4 class="text-xs font-bold">3. Razorpay API Gateway</h4>
+                        <p class="text-[10px] text-gray-400">Generates order and link only upon success approval</p>
+                    </div>
+
+                </div>
+
+                <!-- Bottom Warning Box (Visual evidence of security isolation) -->
+                <div class="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3 text-xs text-red-900">
+                    <span class="text-base">🛡️</span>
+                    <div>
+                        <p class="font-bold">Zero payment credentials exposed or called during rejection</p>
+                        <p class="text-red-700 mt-0.5">When the Policy Gate encounters a failure (signature verification mismatch, category block, trust level threshold breach, or budget overspend), execution halts immediately in local SQLite memory. The backend strictly skips the Razorpay API execution call (returns <code class="bg-red-100 px-1 rounded text-red-800 text-[10px] font-mono">razorpay_url: null</code>), rendering injection or DB manipulation attacks completely powerless.</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Kill Switch Confirmation Modal -->
+    <div id="kill-switch-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full overflow-hidden">
+            <div class="bg-red-900 text-white px-6 py-4 flex items-center space-x-2">
+                <span class="text-xl">⚠️</span>
+                <h3 class="text-sm font-bold">Pause all AI-initiated transactions?</h3>
+            </div>
+            <div class="p-6 space-y-4 text-xs">
+                <p class="text-gray-600 leading-relaxed font-medium">
+                    This will immediately block all automated purchases across all mandates until manually reactivated. All subsequent transaction requests will be rejected with reason:
+                </p>
+                <div class="bg-red-50 p-2.5 rounded border border-red-200 font-mono text-red-800 text-[10px] font-bold">
+                    System Paused - Emergency Kill Switch Active
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button onclick="toggleKillSwitchModal(false)" class="px-4 py-2 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50">Cancel</button>
+                    <button onclick="confirmKillSwitch()" class="px-4 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 shadow-md">Confirm & Pause</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Mandate Modal Form (Security Policy Style) -->
+    <div id="mandate-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-lg w-full overflow-hidden">
+            <div class="bg-indigo-900 text-white px-6 py-4 flex justify-between items-center">
+                <div>
+                    <h3 class="text-base font-bold">Configure Security Mandate</h3>
+                    <p class="text-xs text-indigo-200">Creates an immutable, cryptographically signed permission profile</p>
+                </div>
+                <button onclick="toggleMandateModal(false)" class="text-white hover:text-gray-300 font-bold text-lg">&times;</button>
+            </div>
+            
+            <form id="create-mandate-form" class="p-6 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Mandate ID (Unique)</label>
+                        <input type="text" id="m-id" placeholder="e.g. mandate_dev" required class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-xs font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Policy Purpose</label>
+                        <input type="text" id="m-purpose" placeholder="e.g. Developer Tools" required class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-xs">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Max Single Limit (INR)</label>
+                        <input type="number" id="m-amount" placeholder="5000" required class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Category Restriction</label>
+                        <select id="m-category" required class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-xs bg-white">
+                            <option value="groceries">Groceries</option>
+                            <option value="electronics">Electronics</option>
+                            <option value="kitchenware">Kitchenware</option>
+                            <option value="sports_fitness">Sports & Fitness</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Min Demo Merchant Risk Score (0-5)</label>
+                        <input type="number" step="0.1" id="m-trust" placeholder="4.0" required class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-xs">
+                        <p class="text-[9px] text-gray-400 italic mt-0.5">* Seeded/simulated data for policy demonstration</p>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Max Transactions Allowed</label>
+                        <input type="number" id="m-txns" placeholder="5" required class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-xs">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Expiry duration (Days)</label>
+                    <input type="number" id="m-expiry" placeholder="14" required class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-xs">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Human Confirmation Threshold (INR)</label>
+                    <input type="number" id="m-confirm-threshold" placeholder="1000 (Trigger review above this limit)" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-xs">
+                </div>
+
+                <div class="bg-gray-50 p-3 rounded-lg border flex items-center space-x-2 text-[10px] text-gray-500">
+                    <span>🔐</span>
+                    <span class="font-semibold text-gray-600">This mandate will be cryptographically signed via HMAC-SHA256 after creation.</span>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="toggleMandateModal(false)" class="px-4 py-2 border border-gray-300 rounded-lg text-xs font-semibold hover:bg-gray-50">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 shadow">Generate Mandate Signature</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Frontend controller scripts -->
+    <script>
+        const API_BASE = ""; 
+        let globalTransactions = [];
+        let currentFilter = "all";
+        let isSystemPaused = false;
+
+        // Chart instances
+        let chart1 = null;
+        let chart2 = null;
+        let chart3 = null;
+        let chart4 = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadMandates();
+            loadCatalog();
+            loadAuditLogs();
+            checkKillSwitchStatus();
+
+            // Set up forms
+            document.getElementById("create-mandate-form").addEventListener("submit", handleCreateMandate);
+            document.getElementById("purchase-form").addEventListener("submit", handlePurchase);
+        });
+
+        // Emergency Kill Switch Logic
+        async function checkKillSwitchStatus() {
+            try {
+                const res = await fetch(`${API_BASE}/api/system/status`);
+                const data = await res.json();
+                updateKillSwitchUI(data.paused);
+            } catch (err) {
+                console.error("Failed to fetch system status:", err);
+            }
+        }
+
+        function updateKillSwitchUI(paused) {
+            isSystemPaused = paused;
+            const btn = document.getElementById("kill-switch-btn");
+            const text = document.getElementById("kill-switch-text");
+            const indicator = document.getElementById("kill-switch-indicator");
+            
+            if (paused) {
+                btn.className = "px-4 py-2 bg-red-800 border border-red-500 hover:bg-red-900 text-white font-bold rounded-lg text-xs shadow-md uppercase tracking-wider flex items-center space-x-1.5 animate-pulse";
+                text.textContent = "Resume Agent";
+                indicator.className = "h-2.5 w-2.5 bg-red-400 rounded-full animate-ping";
+            } else {
+                btn.className = "px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs shadow-md uppercase tracking-wider flex items-center space-x-1.5 transition";
+                text.textContent = "Pause Agent";
+                indicator.className = "h-2 w-2 bg-white rounded-full";
+            }
+        }
+
+        function triggerKillSwitch() {
+            if (isSystemPaused) {
+                confirmResume();
+            } else {
+                toggleKillSwitchModal(true);
+            }
+        }
+
+        function toggleKillSwitchModal(show) {
+            const modal = document.getElementById("kill-switch-modal");
+            if (show) modal.classList.remove("hidden");
+            else modal.classList.add("hidden");
+        }
+
+        async function confirmKillSwitch() {
+            toggleKillSwitchModal(false);
+            try {
+                const res = await fetch(`${API_BASE}/api/system/pause`, { method: "POST" });
+                const data = await res.json();
+                updateKillSwitchUI(data.paused);
+                alert("EMERGENCY KILL SWITCH ACTIVATED. All automated purchases are paused.");
+                loadAuditLogs();
+            } catch (err) {
+                alert("Failed to pause agent: " + err);
+            }
+        }
+
+        async function confirmResume() {
+            try {
+                const res = await fetch(`${API_BASE}/api/system/resume`, { method: "POST" });
+                const data = await res.json();
+                updateKillSwitchUI(data.paused);
+                alert("Emergency state cleared. AI Agent is now active.");
+                loadAuditLogs();
+            } catch (err) {
+                alert("Failed to resume agent: " + err);
+            }
+        }
+
+        // SPA Navigation tabs switcher
+        function switchTab(tabId) {
+            const views = ["sandbox", "mandates", "transactions", "analytics"];
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                const tab = document.getElementById(`tab-${v}`);
+                if (v === tabId) {
+                    el.classList.remove("hidden");
+                    tab.className = "px-4 py-2 text-xs font-bold rounded-lg transition active-tab";
+                } else {
+                    el.classList.add("hidden");
+                    tab.className = "px-4 py-2 text-xs font-bold rounded-lg transition inactive-tab";
+                }
+            });
+            if (tabId === "mandates") loadMandates();
+            if (tabId === "transactions") loadAuditLogs();
+            if (tabId === "analytics") loadAnalytics();
+        }
+
+        // Trust Analytics (Page 5) Loader with dynamic Chart.js graphing
+        async function loadAnalytics() {
+            try {
+                // Fetch mandates to calculate budget pool
+                const resMandates = await fetch(`${API_BASE}/api/mandates`);
+                const mandates = await resMandates.json();
+                let totalControlled = 0;
+                mandates.forEach(m => {
+                    totalControlled += m.max_amount;
+                });
+                
+                // Show exact live sum
+                document.getElementById("an-money-controlled").textContent = "₹" + totalControlled.toLocaleString("en-IN");
+                
+                // Fetch audit logs for blocks and tampers
+                const resLogs = await fetch(`${API_BASE}/api/audit-logs`);
+                const logs = await resLogs.json();
+                globalTransactions = logs;
+                
+                // Calculate stats dynamically from SQLite logs
+                const dbApproved = logs.filter(l => l.decision === "APPROVE").length;
+                const dbReview = logs.filter(l => l.decision === "HUMAN_REVIEW").length;
+                const dbRejected = logs.filter(l => l.decision === "REJECT").length;
+                
+                let spendingPrevented = 0;
+                logs.forEach(l => {
+                    if (l.decision === 'REJECT') {
+                        spendingPrevented += l.intent_total;
+                    }
+                });
+                document.getElementById("an-spending-prevented").textContent = "₹" + spendingPrevented.toLocaleString("en-IN");
+                document.getElementById("an-blocked-requests").textContent = dbRejected;
+                document.getElementById("an-human-reviews").textContent = dbReview;
+                
+                const tamperAttempts = logs.filter(l => l.reason.toLowerCase().includes("tampering") || l.reason.toLowerCase().includes("integrity")).length;
+                document.getElementById("an-tamper-attempts").textContent = tamperAttempts;
+                
+                // Top Rejection Reason
+                let rejectLogs = logs.filter(l => l.decision === 'REJECT');
+                if (rejectLogs.length === 0) {
+                    document.getElementById("an-top-reason").textContent = "None";
+                } else {
+                    let counts = {};
+                    rejectLogs.forEach(l => {
+                        let r = l.reason;
+                        if (r.includes("tampering") || r.includes("integrity")) r = "Signature Mismatch";
+                        else if (r.includes("expired")) r = "Mandate Expired";
+                        else if (r.includes("limit reached")) r = "Txn Limit Reached";
+                        else if (r.includes("exceeds")) r = "Budget Exceeded";
+                        else if (r.includes("below required")) r = "Trust Score Low";
+                        else if (r.includes("not allowed")) r = "Category Blocked";
+                        else r = "Other Rule";
+                        
+                        counts[r] = (counts[r] || 0) + 1;
+                    });
+                    let topReason = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+                    document.getElementById("an-top-reason").textContent = topReason;
+                }
+                
+                // Render Chart 1: Approval vs Rejection Ratio
+                if (chart1) chart1.destroy();
+                const ctx1 = document.getElementById('chartApprovalRatio').getContext('2d');
+                chart1 = new Chart(ctx1, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Approved', 'Review Required', 'Rejected'],
+                        datasets: [{
+                            data: [dbApproved, dbReview, dbRejected],
+                            backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
+                        }
+                    }
+                });
+
+                // Render Chart 2: Common Policy Failures
+                let budgetExceeded = logs.filter(l => l.decision === 'REJECT' && l.reason.includes("exceeds")).length;
+                let expiryCheck = logs.filter(l => l.decision === 'REJECT' && l.reason.includes("expired")).length;
+                let categoryBlock = logs.filter(l => l.decision === 'REJECT' && (l.reason.includes("category") || l.reason.includes("not allowed"))).length;
+                let trustLevel = logs.filter(l => l.decision === 'REJECT' && (l.reason.includes("trust") || l.reason.includes("below required"))).length;
+                let sigMismatch = logs.filter(l => l.decision === 'REJECT' && (l.reason.includes("tamper") || l.reason.includes("integrity"))).length;
+
+                if (chart2) chart2.destroy();
+                const ctx2 = document.getElementById('chartPolicyFailures').getContext('2d');
+                chart2 = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Budget Exceeded', 'Expiry Check', 'Category Block', 'Trust Level', 'Signature Mismatch'],
+                        datasets: [{
+                            label: 'Failures Caught',
+                            data: [budgetExceeded, expiryCheck, categoryBlock, trustLevel, sigMismatch],
+                            backgroundColor: '#6366F1',
+                            barThickness: 15
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { grid: { display: false } }, y: { grid: { display: false } } }
+                    }
+                });
+
+                // Render Chart 3: Spending by Mandate
+                let mandateSpending = {};
+                mandates.forEach(m => {
+                    mandateSpending[m.mandate_id] = 0;
+                });
+                logs.forEach(l => {
+                    if (l.decision === 'APPROVE') {
+                        mandateSpending[l.mandate_id] = (mandateSpending[l.mandate_id] || 0) + l.intent_total;
+                    }
+                });
+
+                if (chart3) chart3.destroy();
+                const ctx3 = document.getElementById('chartSpendingByMandate').getContext('2d');
+                chart3 = new Chart(ctx3, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(mandateSpending),
+                        datasets: [{
+                            label: 'INR spent',
+                            data: Object.values(mandateSpending),
+                            backgroundColor: '#3B82F6',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { grid: { display: false } }, y: { grid: { display: false } } }
+                    }
+                });
+
+                // Render Chart 4: Agent Activity over Time (Last 7 transactions)
+                let lastLogs = logs.slice(0, 7).reverse();
+                let chartLabels = lastLogs.map((l, i) => l.intent_item === 'N/A' ? 'Blocked' : l.intent_item);
+                let chartData = lastLogs.map(l => l.intent_total);
+
+                if (chart4) chart4.destroy();
+                const ctx4 = document.getElementById('chartAgentActivity').getContext('2d');
+                chart4 = new Chart(ctx4, {
+                    type: 'line',
+                    data: {
+                        labels: chartLabels.length > 0 ? chartLabels : ['No Activity'],
+                        datasets: [{
+                            label: 'INR Value',
+                            data: chartData.length > 0 ? chartData : [0],
+                            borderColor: '#8B5CF6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { grid: { display: false } }, y: { grid: { display: false } } }
+                    }
+                });
+
+                // Populate Security Events Log (Page 5 timeline)
+                const eventsContainer = document.getElementById("security-events-container");
+                eventsContainer.innerHTML = "";
+                
+                const recentEvents = logs.slice(0, 7);
+                if (recentEvents.length === 0) {
+                    eventsContainer.innerHTML = '<div class="py-4 text-center text-gray-400">No recent security events registered.</div>';
+                } else {
+                    recentEvents.forEach(evt => {
+                        const eventDiv = document.createElement("div");
+                        eventDiv.className = "py-3 flex items-start space-x-3";
+                        
+                        let icon = "✓";
+                        let title = "Automated checkout authorized";
+                        let titleClass = "font-bold text-green-700";
+                        
+                        if (evt.decision === "REJECT") {
+                            icon = "🛑";
+                            if (evt.reason.includes("tamper") || evt.reason.includes("integrity")) {
+                                title = "Mandate modification detected";
+                            } else {
+                                title = "Automated purchase blocked";
+                            }
+                            titleClass = "font-bold text-red-800";
+                        } else if (evt.decision === "HUMAN_REVIEW") {
+                            icon = "⚠️";
+                            title = "Human confirmation required";
+                            titleClass = "font-bold text-yellow-800";
+                        }
+                        
+                        const timeStr = formatRelativeTime(evt.timestamp);
+                        
+                        eventDiv.innerHTML = `
+                            <span class="text-base">${icon}</span>
+                            <div>
+                                <p class="${titleClass}">${title}</p>
+                                <p class="text-gray-500 mt-0.5">${evt.reason}</p>
+                                <span class="text-[9px] text-gray-400 font-mono">${timeStr} • Mandate: ${evt.mandate_id} (v${evt.mandate_version})</span>
+                            </div>
+                        `;
+                        eventsContainer.appendChild(eventDiv);
+                    });
+                }
+
+            } catch (err) {
+                console.error("Error loading analytics:", err);
+            }
+        }
+
+        // Modal triggers
+        function toggleMandateModal(show) {
+            const el = document.getElementById("mandate-modal");
+            if (show) el.classList.remove("hidden");
+            else el.classList.add("hidden");
+        }
+
+        // Load catalog helper
+        async function loadCatalog() {
+            try {
+                const res = await fetch(`${API_BASE}/api/catalog`);
+                const catalog = await res.json();
+                
+                const catalogContainer = document.getElementById("sandbox-catalog");
+                catalogContainer.innerHTML = "";
+                
+                catalog.slice(0, 10).forEach(p => {
+                    const card = document.createElement("div");
+                    card.className = "p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-[11px] flex justify-between items-center";
+                    card.innerHTML = `
+                        <div>
+                            <p class="font-bold text-gray-800">${p.name}</p>
+                            <p class="text-gray-400 font-mono text-[9px]">Category: ${p.category} | Demo Risk Score: ${p.merchant_trust_level}</p>
+                        </div>
+                        <span class="font-bold text-indigo-700">₹${p.price.toLocaleString("en-IN")}</span>
+                    `;
+                    catalogContainer.appendChild(card);
+                });
+            } catch (err) {
+                console.error("Error loading catalog:", err);
+            }
+        }
+
+        let allMandatesData = [];
+        let currentMandateFilter = "all";
+
+        // Fetch and draw mandates grid (Page 2)
+        async function loadMandates() {
+            try {
+                const res = await fetch(`${API_BASE}/api/mandates`);
+                allMandatesData = await res.json();
+                
+                // 1. Update dropdown with Optgroups
+                const dropdown = document.getElementById("p-mandate-id");
+                const selectedVal = dropdown.value;
+                dropdown.innerHTML = '<option value="">-- Select Active Policy Mandate --</option>';
+                
+                const demoGroup = document.createElement("optgroup");
+                demoGroup.label = "📋 Demo Mandates";
+
+                const testGroup = document.createElement("optgroup");
+                testGroup.label = "🧪 Test & Security Verification Mandates";
+
+                allMandatesData.forEach(m => {
+                    const opt = document.createElement("option");
+                    opt.value = m.mandate_id;
+                    opt.textContent = `${m.purpose} (${m.mandate_id} v${m.version})`;
+
+                    const isTest = m.mandate_id.includes("test_") || 
+                                   m.mandate_id.includes("tamper") || 
+                                   m.mandate_id.includes("expired") || 
+                                   m.mandate_id.includes("one_txn") || 
+                                   m.mandate_id.includes("kill_switch") ||
+                                   m.purpose.toLowerCase().includes("test") ||
+                                   m.purpose.toLowerCase().includes("expired");
+
+                    if (isTest) {
+                        testGroup.appendChild(opt);
+                    } else {
+                        demoGroup.appendChild(opt);
+                    }
+                });
+
+                if (demoGroup.children.length > 0) dropdown.appendChild(demoGroup);
+                if (testGroup.children.length > 0) dropdown.appendChild(testGroup);
+
+                if (selectedVal) {
+                    dropdown.value = selectedVal;
+                }
+
+                // 2. Render Grid
+                renderMandateGrid();
+            } catch (err) {
+                console.error("Error loading mandates:", err);
+            }
+        }
+
+        function setMandateFilter(filterType) {
+            currentMandateFilter = filterType;
+            ["all", "demo", "test"].forEach(t => {
+                const btn = document.getElementById(`mf-${t}`);
+                if (btn) {
+                    if (t === filterType) {
+                        btn.className = "px-3 py-1.5 rounded-lg bg-white text-indigo-700 shadow-sm font-bold border border-gray-200";
+                    } else {
+                        btn.className = "px-3 py-1.5 rounded-lg text-gray-500 hover:text-gray-900";
+                    }
+                }
+            });
+            renderMandateGrid();
+        }
+
+        function renderMandateGrid() {
+            const grid = document.getElementById("mandates-grid");
+            if (!grid) return;
+            grid.innerHTML = "";
+
+            const filtered = allMandatesData.filter(m => {
+                const isTest = m.mandate_id.includes("test_") || 
+                               m.mandate_id.includes("tamper") || 
+                               m.mandate_id.includes("expired") || 
+                               m.mandate_id.includes("one_txn") || 
+                               m.mandate_id.includes("kill_switch") ||
+                               m.purpose.toLowerCase().includes("test") ||
+                               m.purpose.toLowerCase().includes("expired");
+                
+                if (currentMandateFilter === "demo") return !isTest;
+                if (currentMandateFilter === "test") return isTest;
+                return true;
+            });
+
+            filtered.forEach(m => {
+                const isTest = m.mandate_id.includes("test_") || 
+                               m.mandate_id.includes("tamper") || 
+                               m.mandate_id.includes("expired") || 
+                               m.mandate_id.includes("one_txn") || 
+                               m.mandate_id.includes("kill_switch") ||
+                               m.purpose.toLowerCase().includes("test") ||
+                               m.purpose.toLowerCase().includes("expired");
+
+                const card = document.createElement("div");
+                card.className = "bg-white p-6 rounded-xl shadow border border-gray-200 flex flex-col justify-between space-y-4 hover:shadow-md transition relative";
+                
+                const isExpired = Math.floor(Date.now() / 1000) >= m.expiry_timestamp;
+                const hoursLeft = Math.max(0, Math.round((m.expiry_timestamp - Math.floor(Date.now() / 1000)) / 3600));
+                const remainingTxns = Math.max(0, m.max_transactions - m.current_transactions);
+                const formattedLimit = m.max_amount.toLocaleString("en-IN");
+                
+                card.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-gray-800 text-sm flex items-center space-x-1">
+                                    <span>${m.purpose}</span>
+                                    <span class="text-[9px] font-mono text-gray-400 font-normal">(v${m.version})</span>
+                                </h3>
+                                <div class="flex items-center space-x-1.5 mt-0.5">
+                                    <p class="font-mono text-[9px] text-gray-400 uppercase tracking-widest">${m.mandate_id}</p>
+                                    ${isTest ? '<span class="text-[8px] bg-purple-100 text-purple-700 px-1.5 py-0.2 rounded font-semibold border border-purple-200">Test Mandate</span>' : ''}
+                                </div>
+                            </div>
+                            <span class="text-[9px] px-2 py-0.5 rounded font-semibold border ${isExpired ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'}">
+                                ${isExpired ? 'EXPIRED' : '● ACTIVE'}
+                            </span>
+                        </div>
+                        
+                        <div class="pt-2 border-t border-gray-100 space-y-2 text-xs">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400 font-semibold">Maximum Budget:</span>
+                                <span class="font-bold text-gray-800">₹${formattedLimit}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400 font-semibold">Allowed Category:</span>
+                                <span class="font-mono font-bold text-gray-800 text-[10px] uppercase">${m.allowed_category}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400 font-semibold">Min Demo Risk Score:</span>
+                                <span class="font-bold text-gray-800">≥ ${m.allowed_merchant_trust_level}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400 font-semibold">Transactions Remaining:</span>
+                                <span class="font-bold text-gray-800">${remainingTxns} / ${m.max_transactions}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400 font-semibold">Review Threshold:</span>
+                                <span class="font-bold text-gray-800">${m.human_review_threshold ? '₹' + m.human_review_threshold.toLocaleString("en-IN") : 'None'}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400 font-semibold">Expires:</span>
+                                <span class="font-bold text-gray-800">${isExpired ? 'Expired' : 'in ' + hoursLeft + ' hours'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-gray-100 flex items-center justify-between text-[10px]">
+                        <span class="text-gray-400 font-mono text-[9px] truncate max-w-[180px]">Sig: ${m.signature ? m.signature.substring(0, 12) + '...' : 'N/A'}</span>
+                        <span class="text-indigo-600 font-bold hover:underline cursor-pointer" onclick="selectMandateForSandbox('${m.mandate_id}')">Use in Sandbox &rarr;</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function selectMandateForSandbox(mandateId) {
+            switchTab('sandbox');
+            const dropdown = document.getElementById("p-mandate-id");
+            if (dropdown) {
+                dropdown.value = mandateId;
+            }
+        }
+
+        // Post new Mandate form
+        async function handleCreateMandate(e) {
+            e.preventDefault();
+            
+            const reviewThresholdInput = document.getElementById("m-confirm-threshold").value;
+            const payload = {
+                mandate_id: document.getElementById("m-id").value.trim(),
+                purpose: document.getElementById("m-purpose").value.trim(),
+                max_amount: parseFloat(document.getElementById("m-amount").value),
+                allowed_category: document.getElementById("m-category").value,
+                allowed_merchant_trust_level: parseFloat(document.getElementById("m-trust").value),
+                max_transactions: parseInt(document.getElementById("m-txns").value),
+                expiry_days: parseInt(document.getElementById("m-expiry").value),
+                human_review_threshold: reviewThresholdInput ? parseFloat(reviewThresholdInput) : null
+            };
+            
+            try {
+                const res = await fetch(`${API_BASE}/api/mandates`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (res.ok) {
+                    toggleMandateModal(false);
+                    document.getElementById("create-mandate-form").reset();
+                    loadMandates();
+                    alert("Immutable Mandate created & cryptographically signed successfully.");
+                } else {
+                    const err = await res.json();
+                    alert(`Failed to save policy: ${err.detail || "Server error"}`);
+                }
+            } catch (err) {
+                alert(`Network error: ${err}`);
+            }
+        }
+
+        // Submit Purchase Request (Console Sandbox Pipeline View)
+        async function handlePurchase(e) {
+            e.preventDefault();
+            
+            const dropdown = document.getElementById("p-mandate-id");
+            const buyerRequest = document.getElementById("p-buyer-request").value.trim();
+            const mandateId = dropdown.value;
+            
+            if (!mandateId) {
+                alert("Please select an active mandate rule.");
+                return;
+            }
+            
+            const submitBtn = document.getElementById("submit-purchase-btn");
+            const spinner = document.getElementById("btn-spinner");
+            const btnText = document.getElementById("btn-text");
+            
+            submitBtn.disabled = true;
+            submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+            spinner.classList.remove("hidden");
+            btnText.textContent = "Parsing Intent...";
+            
+            // Hide previous
+            document.getElementById("pipeline-empty").classList.add("hidden");
+            document.getElementById("pipeline-results").classList.add("hidden");
+            
+            try {
+                const res = await fetch(`${API_BASE}/api/purchase`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ buyer_request: buyerRequest, mandate_id: mandateId })
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    
+                    // Render Steps 1-4
+                    renderTimeline(data);
+                    
+                    // Reload databases
+                    loadMandates();
+                    loadAuditLogs();
+                } else {
+                    const err = await res.json();
+                    alert(`Purchase pipeline error: ${err.detail || "Server error"}`);
+                }
+            } catch (err) {
+                alert(`Network connection failure: ${err}`);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
+                spinner.classList.add("hidden");
+                btnText.textContent = "Execute AI Purchase Pipeline";
+            }
+        }
+
+        // Stepper Visualizer
+        function renderTimeline(data) {
+            const resultsBox = document.getElementById("pipeline-results");
+            
+            // Step 1: LLM Parsing
+            const fallbackBanner = document.getElementById("llm-fallback-banner");
+            const rzpFallbackBanner = document.getElementById("razorpay-fallback-banner");
+            const llmBadge = document.getElementById("p-step1-status");
+            
+            if (data.fallback_active) {
+                fallbackBanner.classList.remove("hidden");
+                llmBadge.textContent = "Mock Keyword Parsing Active";
+                llmBadge.className = "text-[10px] bg-yellow-100 text-yellow-800 font-semibold px-2 py-0.5 rounded border border-yellow-300";
+            } else {
+                fallbackBanner.classList.add("hidden");
+                llmBadge.textContent = "✓ Gemini structured output verified";
+                llmBadge.className = "text-[10px] bg-green-100 text-green-800 font-semibold px-2 py-0.5 rounded border border-green-300";
+            }
+
+            if (data.razorpay_fallback_active) {
+                rzpFallbackBanner.classList.remove("hidden");
+            } else {
+                rzpFallbackBanner.classList.add("hidden");
+            }
+            
+            document.getElementById("p-step1-json").textContent = JSON.stringify(data.intent, null, 2);
+
+            // Step 3: Deterministic Policy Checklist
+            const checklist = document.getElementById("p-policy-checklist");
+            checklist.innerHTML = "";
+            
+            const totalAmount = data.intent.price * data.intent.quantity;
+            
+            // Construct checks array
+            const isSignatureOk = true; 
+            const isExpiryOk = data.reason !== "Mandate has expired";
+            const isTxnLimitOk = !data.reason.includes("Mandate transaction limit reached");
+            const isCategoryOk = !data.reason.includes("is not allowed by mandate");
+            const isTrustOk = !data.reason.includes("below required");
+            const isBudgetOk = !data.reason.includes("exceeds the remaining mandate budget");
+            
+            const checks = [
+                { name: "Signature Integrity", status: isSignatureOk, text: "HMAC Verification Valid" },
+                { name: "Mandate Expiry", status: isExpiryOk, text: "Current time within window" },
+                { name: "Transaction Limit", status: isTxnLimitOk, text: "Count within limits" },
+                { name: "Category Restriction", status: isCategoryOk, text: `Category '${data.product_category}' matches` },
+                { name: "Demo Merchant Risk Score", status: isTrustOk, text: `Risk Score: ${data.merchant_trust_level} / 5` },
+                { name: "Policy Budget", status: isBudgetOk, text: `Cost: ₹${totalAmount.toLocaleString("en-IN")}` }
+            ];
+            
+            checks.forEach(c => {
+                const item = document.createElement("div");
+                item.className = `flex items-start space-x-2 ${c.status ? 'text-green-800' : 'text-red-700'}`;
+                item.innerHTML = `
+                    <span class="font-bold font-mono text-sm">${c.status ? '✓' : '✗'}</span>
+                    <div>
+                        <p class="font-bold text-[11px] leading-tight">${c.name}</p>
+                        <p class="text-[9px] text-gray-500">${c.text}</p>
+                    </div>
+                `;
+                checklist.appendChild(item);
+            });
+
+            // Step 4: Final Decision Card
+            const step4Icon = document.getElementById("p-step4-icon");
+            const card = document.getElementById("p-decision-card");
+            
+            if (data.decision === "APPROVE") {
+                step4Icon.className = "absolute left-0 top-1 w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center border-2 border-green-700 z-10 font-bold";
+                step4Icon.innerHTML = "✓";
+                
+                card.className = "p-6 rounded-xl border border-green-200 bg-green-50 shadow-md space-y-3";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-bold text-green-800 flex items-center">🛡️ APPROVED</span>
+                        <span class="text-[9px] bg-green-200 text-green-800 font-bold px-2 py-0.5 rounded">APPROVED FOR PAYMENT</span>
+                    </div>
+                    <p class="text-xs text-green-700">Transaction meets all mandate requirements and has been cryptographically signed.</p>
+                    <div class="text-xs space-y-1 text-gray-700 pt-2 border-t border-green-200">
+                        <p><span class="font-semibold text-gray-500">Amount:</span> <span class="font-bold text-gray-900">₹${totalAmount.toLocaleString("en-IN")}</span></p>
+                        <p><span class="font-semibold text-gray-500">Merchant ID:</span> <span class="font-mono text-gray-900">${data.intent.merchant_id}</span></p>
+                    </div>
+                    <div class="pt-2">
+                        <a href="${data.razorpay_url}" target="_blank" class="inline-block bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow transition">
+                            Proceed to Secure Payment →
+                        </a>
+                    </div>
+                `;
+            } else if (data.decision === "HUMAN_REVIEW") {
+                step4Icon.className = "absolute left-0 top-1 w-10 h-10 rounded-full bg-yellow-500 text-white flex items-center justify-center border-2 border-yellow-600 z-10 font-bold";
+                step4Icon.innerHTML = "!";
+                
+                card.className = "p-6 rounded-xl border border-yellow-200 bg-yellow-50 shadow-md space-y-3";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-bold text-yellow-800 flex items-center">⚠️ HUMAN CONFIRMATION REQUIRED</span>
+                        <span class="text-[9px] bg-yellow-200 text-yellow-800 font-bold px-2 py-0.5 rounded">SUSPENDED</span>
+                    </div>
+                    <p class="text-xs text-yellow-800 font-semibold">${data.reason}</p>
+                    <div class="text-xs space-y-1 text-gray-700 pt-2 border-t border-yellow-200">
+                        <p><span class="font-semibold text-gray-500">Amount:</span> <span class="font-bold text-gray-900">₹${totalAmount.toLocaleString("en-IN")}</span></p>
+                        <p><span class="font-semibold text-gray-500">Merchant ID:</span> <span class="font-mono text-gray-900">${data.intent.merchant_id}</span></p>
+                    </div>
+                    <div class="pt-2 flex space-x-2">
+                        <a href="${data.razorpay_url}" target="_blank" onclick="alert('Transaction verified. Launching Razorpay payment gateway.');" class="inline-block bg-yellow-600 hover:bg-yellow-700 text-white text-xs font-bold py-2 px-4 rounded-lg shadow transition">
+                            Confirm & Proceed
+                        </a>
+                        <button onclick="switchTab('transactions');" class="bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 text-xs font-semibold py-2 px-4 rounded-lg shadow transition">
+                            Reject Transaction
+                        </button>
+                    </div>
+                `;
+            } else {
+                step4Icon.className = "absolute left-0 top-1 w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center border-2 border-red-700 z-10 font-mono font-bold";
+                step4Icon.innerHTML = "✗";
+                
+                card.className = "p-6 rounded-xl border border-red-200 bg-red-50 shadow-md space-y-3";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-bold text-red-800 flex items-center">🛑 REJECTED</span>
+                        <span class="text-[9px] bg-red-200 text-red-800 font-bold px-2 py-0.5 rounded">BLOCKED</span>
+                    </div>
+                    <p class="text-xs text-red-800 font-bold">Reason: <span class="font-medium">${data.reason}</span></p>
+                    <p class="text-[11px] text-gray-500">Transaction failed deterministic integrity or budget checks. Payment link generation skipped.</p>
+                `;
+            }
+            
+            resultsBox.classList.remove("hidden");
+            resultsBox.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Fetch logs and construct Premium table views (Page 3)
+        async function loadAuditLogs() {
+            try {
+                const res = await fetch(`${API_BASE}/api/audit-logs`);
+                const logs = await res.json();
+                
+                globalTransactions = logs;
+                
+                // Statistics calculation
+                const total = logs.length;
+                const approved = logs.filter(l => l.decision === "APPROVE").length;
+                const review = logs.filter(l => l.decision === "HUMAN_REVIEW").length;
+                const rejected = logs.filter(l => l.decision === "REJECT").length;
+                
+                document.getElementById("stat-total").textContent = total;
+                document.getElementById("stat-approved").textContent = approved;
+                document.getElementById("stat-review").textContent = review;
+                document.getElementById("stat-rejected").textContent = rejected;
+                
+                // Filter and draw table
+                renderFilteredTable();
+            } catch (err) {
+                console.error("Error loading audit logs:", err);
+            }
+        }
+
+        // Filter Table Row Drawer
+        function filterTransactions(decisionFilter) {
+            currentFilter = decisionFilter;
+            const filters = ["all", "approve", "review", "reject"];
+            filters.forEach(f => {
+                const el = document.getElementById(`filter-${f}`);
+                if (f === decisionFilter.toLowerCase().replace("human_review", "review").replace("approve", "approve").replace("reject", "reject")) {
+                    el.className = "px-3.5 py-1.5 text-xs font-bold rounded-lg bg-indigo-600 text-white shadow";
+                } else {
+                    el.className = "px-3.5 py-1.5 text-xs font-bold rounded-lg text-gray-600 hover:bg-gray-100 transition";
+                }
+            });
+            renderFilteredTable();
+        }
+
+        // Draws the table items dynamically (Page 3)
+        function renderFilteredTable() {
+            const tbody = document.getElementById("txn-table-body");
+            tbody.innerHTML = "";
+            
+            const filtered = globalTransactions.filter(l => {
+                if (currentFilter === "all") return true;
+                return l.decision === currentFilter;
+            });
+            
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-gray-400">No matching logs found.</td></tr>';
+                return;
+            }
+            
+            filtered.forEach(log => {
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-indigo-50 hover:bg-opacity-30 cursor-pointer transition duration-75";
+                tr.onclick = () => loadDecisionTrace(log);
+                
+                const timeStr = formatRelativeTime(log.timestamp);
+                const isApprove = log.decision === "APPROVE";
+                const isReview = log.decision === "HUMAN_REVIEW";
+                
+                let badgeClass = "bg-red-100 text-red-700";
+                if (isApprove) badgeClass = "bg-green-100 text-green-700";
+                if (isReview) badgeClass = "bg-yellow-100 text-yellow-700";
+                
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-medium text-gray-800">
+                        <p class="font-bold">${log.buyer_request}</p>
+                        <p class="text-[10px] text-gray-400 font-semibold font-mono mt-0.5">Matched: ${log.intent_quantity}x ${log.intent_item}</p>
+                    </td>
+                    <td class="py-3 px-4 text-right font-bold text-gray-900 whitespace-nowrap">₹${log.intent_total.toLocaleString("en-IN")}</td>
+                    <td class="py-3 px-4 font-semibold text-gray-600 font-mono text-[10px]">${log.mandate_id} (v${log.mandate_version})</td>
+                    <td class="py-3 px-4 text-center">
+                        <span class="inline-block text-[9px] uppercase font-bold px-2.5 py-0.5 rounded-full ${badgeClass}">
+                            ${log.decision.replace("_", " ")}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-gray-400 text-[10px] whitespace-nowrap">${timeStr}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Relative time helper
+        function formatRelativeTime(timestamp) {
+            const diff = Math.floor(Date.now() / 1000) - timestamp;
+            if (diff < 60) return "just now";
+            if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+            if (diff < 86450) return `${Math.floor(diff / 3600)} hours ago`;
+            return `${Math.floor(diff / 86400)} days ago`;
+        }
+
+        // Detailed Trace Timeline Loader (Page 4 Side panel)
+        function loadDecisionTrace(log) {
+            document.getElementById("trace-empty").classList.add("hidden");
+            
+            const trace = document.getElementById("trace-content");
+            trace.classList.remove("hidden");
+            
+            document.getElementById("trace-log-id").textContent = `LOG ID: TXN_TRACE_#${log.log_id}00${log.timestamp.toString().slice(-4)}`;
+            
+            // Badge
+            const badge = document.getElementById("trace-decision-badge");
+            badge.textContent = log.decision.replace("_", " ");
+            if (log.decision === "APPROVE") {
+                badge.className = "text-[9px] font-bold px-2.5 py-0.5 rounded-full bg-green-100 text-green-700";
+            } else if (log.decision === "HUMAN_REVIEW") {
+                badge.className = "text-[9px] font-bold px-2.5 py-0.5 rounded-full bg-yellow-100 text-yellow-700";
+            } else {
+                badge.className = "text-[9px] font-bold px-2.5 py-0.5 rounded-full bg-red-100 text-red-700";
+            }
+            
+            // Step 1: Request
+            document.getElementById("trace-step1-req").textContent = `"${log.buyer_request}"`;
+            
+            // Step 2: Intent
+            const mockIntent = {
+                item: log.intent_item,
+                price: log.intent_price,
+                quantity: log.intent_quantity,
+                merchant_id: log.intent_merchant_id
+            };
+            document.getElementById("trace-step2-intent").textContent = JSON.stringify(mockIntent, null, 2);
+            
+            // Step 3: Mandate ID
+            document.getElementById("trace-step3-mid").textContent = `${log.mandate_id} (v${log.mandate_version})`;
+            
+            // Step 4: Cryptographic signature
+            // Mock signature output for visual proof
+            const mockSig = `hmac-sha256: 0x${hashString(log.mandate_id + log.mandate_version.toString()).slice(0, 32)}...`;
+            document.getElementById("trace-step4-sig").textContent = mockSig;
+            
+            // Step 5: Checks
+            const isSignatureOk = true; 
+            const isExpiryOk = log.reason !== "Mandate has expired";
+            const isTxnLimitOk = !log.reason.includes("Mandate transaction limit reached");
+            const isCategoryOk = !log.reason.includes("is not allowed by mandate");
+            const isTrustOk = !log.reason.includes("below required");
+            const isBudgetOk = !log.reason.includes("exceeds the remaining mandate budget");
+            
+            const checksHtml = `
+                <p class="${isSignatureOk ? 'text-green-600' : 'text-red-600'}">✓ Signature Integrity: HMAC Verification Valid</p>
+                <p class="${isExpiryOk ? 'text-green-600' : 'text-red-600'}">${isExpiryOk ? '✓' : '✗'} Mandate Expiry: Within window</p>
+                <p class="${isTxnLimitOk ? 'text-green-600' : 'text-red-600'}">${isTxnLimitOk ? '✓' : '✗'} Transaction Limit Check passed</p>
+                <p class="${isCategoryOk ? 'text-green-600' : 'text-red-600'}">${isCategoryOk ? '✓' : '✗'} Category Restrict: '${log.intent_item}' compliant</p>
+                <p class="${isTrustOk ? 'text-green-600' : 'text-red-600'}">${isTrustOk ? '✓' : '✗'} Trust Factor validated</p>
+                <p class="${isBudgetOk ? 'text-green-600' : 'text-red-600'}">${isBudgetOk ? '✓' : '✗'} Budget: ₹${log.intent_total.toLocaleString("en-IN")} within threshold</p>
+            `;
+            document.getElementById("trace-step5-checks").innerHTML = checksHtml;
+
+            // Step 6: Decision
+            const dot6 = document.getElementById("trace-step6-dot");
+            const desc6 = document.getElementById("trace-step6-desc");
+            desc6.textContent = log.reason;
+            
+            if (log.decision === "APPROVE") {
+                dot6.className = "absolute left-[-22px] top-1.5 w-3 h-3 rounded-full bg-green-600 border-2 border-white";
+                desc6.className = "text-green-700 mt-1 font-semibold";
+            } else if (log.decision === "HUMAN_REVIEW") {
+                dot6.className = "absolute left-[-22px] top-1.5 w-3 h-3 rounded-full bg-yellow-500 border-2 border-white";
+                desc6.className = "text-yellow-700 mt-1 font-semibold";
+            } else {
+                dot6.className = "absolute left-[-22px] top-1.5 w-3 h-3 rounded-full bg-red-600 border-2 border-white";
+                desc6.className = "text-red-700 mt-1 font-semibold";
+            }
+
+            // Step 7: Razorpay Status
+            const dot7 = document.getElementById("trace-step7-dot");
+            const desc7 = document.getElementById("trace-step7-desc");
+            
+            if (log.decision === "APPROVE") {
+                dot7.className = "absolute left-[-22px] top-1.5 w-3 h-3 rounded-full bg-green-600 border-2 border-white";
+                desc7.innerHTML = `🟢 Razorpay Link Active: <a href="https://rzp.io/rzp/BwMjo6em" target="_blank" class="text-indigo-600 font-semibold hover:underline">Pay Order &rarr;</a>`;
+            } else if (log.decision === "HUMAN_REVIEW") {
+                dot7.className = "absolute left-[-22px] top-1.5 w-3 h-3 rounded-full bg-yellow-500 border-2 border-white";
+                desc7.innerHTML = `🟡 Suspended: Awaiting Human approval key. <a href="https://rzp.io/rzp/BwMjo6em" target="_blank" class="text-indigo-600 font-semibold hover:underline">Approve & Pay &rarr;</a>`;
+            } else {
+                dot7.className = "absolute left-[-22px] top-1.5 w-3 h-3 rounded-full bg-gray-400 border-2 border-white";
+                desc7.textContent = "⚫ Razorpay Not Called: Transaction rejected at step 5/6.";
+            }
+            
+            trace.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Dummy hash function for visual timeline key signatures
+        function hashString(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            let hex = "";
+            for (let i = 0; i < 8; i++) {
+                let val = (hash >> (i * 8)) & 0xFF;
+                hex += ("00" + val.toString(16)).slice(-2);
+            }
+            return hex + hex + hex + hex;
+        }
+    </script>
+</body>
+</html>

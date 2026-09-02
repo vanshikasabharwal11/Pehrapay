@@ -1,0 +1,98 @@
+[
+  {
+    "id": "prod_001",
+    "name": "Wireless Noise-Cancelling Headphones",
+    "price": 14999.00,
+    "category": "electronics",
+    "merchant_id": "merch_electronic_hub",
+    "merchant_trust_level": 4.5
+  },
+  {
+    "id": "prod_002",
+    "name": "Ergonomic Office Chair",
+    "price": 8500.00,
+    "category": "furniture",
+    "merchant_id": "merch_comfort_zone",
+    "merchant_trust_level": 4.2
+  },
+  {
+    "id": "prod_003",
+    "name": "Mechanical Keyboard",
+    "price": 4500.00,
+    "category": "electronics",
+    "merchant_id": "merch_gamer_gear",
+    "merchant_trust_level": 3.9
+  },
+  {
+    "id": "prod_004",
+    "name": "Double-Walled Coffee Mug",
+    "price": 899.00,
+    "category": "kitchenware",
+    "merchant_id": "merch_home_basics",
+    "merchant_trust_level": 4.0
+  },
+  {
+    "id": "prod_005",
+    "name": "Premium Arabica Coffee Beans (1kg)",
+    "price": 1200.00,
+    "category": "groceries",
+    "merchant_id": "merch_brew_masters",
+    "merchant_trust_level": 4.8
+  },
+  {
+    "id": "prod_006",
+    "name": "Stainless Steel Water Bottle",
+    "price": 650.00,
+    "category": "sports_fitness",
+    "merchant_id": "merch_active_life",
+    "merchant_trust_level": 4.1
+  },
+  {
+    "id": "prod_007",
+    "name": "Resistance Bands Set",
+    "price": 1150.00,
+    "category": "sports_fitness",
+    "merchant_id": "merch_active_life",
+    "merchant_trust_level": 4.1
+  },
+  {
+    "id": "prod_008",
+    "name": "USB-C Hub (6-in-1)",
+    "price": 2499.00,
+    "category": "electronics",
+    "merchant_id": "merch_tech_essentials",
+    "merchant_trust_level": 4.6
+  },
+  {
+    "id": "prod_009",
+    "name": "Organic Green Tea (50 bags)",
+    "price": 450.00,
+    "category": "groceries",
+    "merchant_id": "merch_nature_choice",
+    "merchant_trust_level": 3.5
+  },
+  {
+    "id": "prod_010",
+    "name": "Minimalist Leather Wallet",
+    "price": 1800.00,
+    "category": "apparel",
+    "merchant_id": "merch_craft_leather",
+    "merchant_trust_level": 4.7
+  },
+  {
+    "id": "prod_011",
+    "name": "Adjustable Laptop Stand",
+    "price": 1500.00,
+    "category": "electronics",
+    "merchant_id": "merch_tech_essentials",
+    "merchant_trust_level": 4.6
+  },
+  {
+    "id": "prod_012",
+    "name": "Smart LED Desk Lamp",
+    "price": 3200.00,
+    "category": "electronics",
+    "merchant_id": "merch_illuminate_co",
+    "merchant_trust_level": 2.8
+  }
+]
