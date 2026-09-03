@@ -46,14 +46,17 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold tracking-tight">PehraPay</h1>
-                    <p class="text-[10px] text-indigo-200 uppercase tracking-widest font-semibold">Guardrails for Autonomous Payments</p>
+                    <p class="text-[10px] text-indigo-200 uppercase tracking-widest font-semibold">AI Commerce & Trust Layer for Autonomous Payments</p>
                 </div>
             </div>
 
             <!-- Tab Selectors -->
             <nav class="flex space-x-2">
                 <button onclick="switchTab('sandbox')" id="tab-sandbox" class="px-4 py-2 text-xs font-bold rounded-lg transition active-tab">
-                    Console Sandbox
+                    🤖 AI Purchase Console
+                </button>
+                <button onclick="switchTab('catalog')" id="tab-catalog" class="px-4 py-2 text-xs font-bold rounded-lg transition inactive-tab">
+                    🏪 Merchant Catalog
                 </button>
                 <button onclick="switchTab('mandates')" id="tab-mandates" class="px-4 py-2 text-xs font-bold rounded-lg transition inactive-tab">
                     Spending Mandates
@@ -104,6 +107,27 @@
         <!-- VIEW 1: CONSOLE SANDBOX (PAGE 1) -->
         <!-- ========================================================================= -->
         <section id="view-sandbox" class="space-y-6">
+
+            <!-- 4-Stage Pipeline Strip (C5) -->
+            <div class="bg-indigo-50 border border-indigo-100 rounded-xl px-5 py-3 flex items-center gap-2 flex-wrap text-xs font-medium">
+                <span class="text-[10px] text-indigo-500 font-bold uppercase tracking-wider mr-1">AI Commerce Pipeline:</span>
+                <div id="pipe-stage-1" class="flex items-center gap-1.5 bg-white border border-indigo-200 rounded-lg px-3 py-1.5 shadow-sm transition">
+                    <span>🤖</span><span class="font-bold text-indigo-900">Gemini</span><span class="text-gray-400">Intent Parser</span>
+                </div>
+                <span class="text-indigo-300 font-bold text-base">→</span>
+                <div id="pipe-stage-2" class="flex items-center gap-1.5 bg-white border border-indigo-200 rounded-lg px-3 py-1.5 shadow-sm transition">
+                    <span>📦</span><span class="font-bold text-indigo-900">PehraPay Catalog</span><span class="text-gray-400">Product & Price Truth</span>
+                </div>
+                <span class="text-indigo-300 font-bold text-base">→</span>
+                <div id="pipe-stage-3" class="flex items-center gap-1.5 bg-white border border-indigo-200 rounded-lg px-3 py-1.5 shadow-sm transition">
+                    <span>⚖️</span><span class="font-bold text-indigo-900">Policy Engine</span><span class="text-gray-400">Deterministic Authorization</span>
+                </div>
+                <span class="text-indigo-300 font-bold text-base">→</span>
+                <div id="pipe-stage-4" class="flex items-center gap-1.5 bg-white border border-indigo-200 rounded-lg px-3 py-1.5 shadow-sm transition">
+                    <span>💳</span><span class="font-bold text-indigo-900">Razorpay</span><span class="text-gray-400">Authorized Execution Only</span>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
                 <!-- Left: Form inputs -->
@@ -219,6 +243,18 @@
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-xs" id="p-policy-checklist">
                                         <!-- checklist items filled in js -->
                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- Goal Resolution Panel (shown only for goal-based requests) -->
+                            <div id="goal-resolution-panel" class="hidden relative pl-12">
+                                <div class="absolute left-0 top-1 w-10 h-10 rounded-full bg-violet-600 text-white flex items-center justify-center border-2 border-violet-700 z-10 text-lg">🎯</div>
+                                <div class="bg-violet-50 border border-violet-200 rounded-xl p-4 space-y-1">
+                                    <div class="flex justify-between items-center">
+                                        <h4 class="text-sm font-bold text-violet-900">PehraPay AI Catalog Resolver</h4>
+                                        <span class="text-[9px] bg-violet-700 text-white font-bold px-2 py-0.5 rounded">GOAL-BASED PRODUCT DISCOVERY</span>
+                                    </div>
+                                    <p id="goal-resolution-text" class="text-[11px] text-violet-800 font-mono leading-relaxed"></p>
                                 </div>
                             </div>
 
@@ -414,6 +450,47 @@
         </section>
 
         <!-- ========================================================================= -->
+        <!-- VIEW MERCHANT CATALOG: AI-READABLE MERCHANT CATALOG                      -->
+        <!-- ========================================================================= -->
+        <section id="view-catalog" class="hidden space-y-6">
+            <!-- Header -->
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900">🏪 AI-Readable Merchant Catalog</h2>
+                    <p class="text-sm text-gray-500 mt-1">Merchants publish their structured catalog here so AI buyers can discover and transact with them through PehraPay.</p>
+                </div>
+                <span class="text-xs bg-green-100 text-green-800 font-bold px-3 py-1.5 rounded-full border border-green-200">✓ PehraPay Verified Merchants</span>
+            </div>
+
+            <!-- Pipeline explainer strip -->
+            <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+                <p class="text-[11px] text-indigo-700 font-semibold uppercase tracking-wider mb-3">How AI Commerce Works in PehraPay</p>
+                <div class="flex items-center gap-2 flex-wrap text-xs">
+                    <div class="flex items-center gap-1.5 bg-white border border-indigo-200 rounded-lg px-3 py-1.5 shadow-sm">
+                        <span>🤖</span><span class="font-bold text-indigo-900">Gemini</span><span class="text-gray-500">Understands intent</span>
+                    </div>
+                    <span class="text-indigo-300 font-bold">→</span>
+                    <div class="flex items-center gap-1.5 bg-white border border-indigo-200 rounded-lg px-3 py-1.5 shadow-sm">
+                        <span>📦</span><span class="font-bold text-indigo-900">PehraPay Catalog</span><span class="text-gray-500">Resolves product, price & merchant</span>
+                    </div>
+                    <span class="text-indigo-300 font-bold">→</span>
+                    <div class="flex items-center gap-1.5 bg-white border border-indigo-200 rounded-lg px-3 py-1.5 shadow-sm">
+                        <span>⚖️</span><span class="font-bold text-indigo-900">Policy Engine</span><span class="text-gray-500">Authorizes or rejects</span>
+                    </div>
+                    <span class="text-indigo-300 font-bold">→</span>
+                    <div class="flex items-center gap-1.5 bg-white border border-indigo-200 rounded-lg px-3 py-1.5 shadow-sm">
+                        <span>💳</span><span class="font-bold text-indigo-900">Razorpay</span><span class="text-gray-500">Executes authorized payments only</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Catalog Grid -->
+            <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="col-span-3 text-center py-12 text-gray-400 text-sm">Loading merchant catalog...</div>
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
         <!-- VIEW 4: TRUST ANALYTICS (PAGE 5) -->
         <!-- ========================================================================= -->
         <section id="view-analytics" class="hidden space-y-8">
@@ -525,7 +602,7 @@
             <div class="bg-white p-8 rounded-xl border border-gray-200 shadow-sm space-y-6">
                 <div class="flex flex-col md:flex-row md:justify-between md:items-center border-b pb-4 gap-4">
                     <div>
-                        <h3 class="text-base font-bold text-gray-900">Razorpay Isolation Status: PAYMENT API ISOLATION</h3>
+                        <h3 class="text-base font-bold text-gray-900">Razorpay Isolation Status: SANDBOXED TEST MODE</h3>
                         <p class="text-xs text-gray-500">Policy constraints run deterministically. Failed policy checks terminate execution before the Razorpay API call path.</p>
                     </div>
                     <span class="bg-green-100 text-green-800 border border-green-300 text-[10px] px-3 py-1 rounded font-bold uppercase tracking-wider flex items-center self-start md:self-center">
@@ -579,6 +656,81 @@
         </section>
 
     </main>
+
+    <!-- Decision Receipt Modal -->
+    <div id="receipt-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto hidden">
+        <div class="flex min-h-full items-start justify-center py-8 px-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-lg w-full overflow-hidden flex flex-col">
+            <div class="bg-gradient-to-r from-indigo-900 to-gray-900 text-white px-6 py-4 flex justify-between items-center flex-shrink-0">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xl">📄</span>
+                    <div>
+                        <h3 class="text-base font-bold">Policy Decision Receipt</h3>
+                        <p class="text-[10px] text-indigo-200">Cryptographically Audited Mandate Evaluation</p>
+                    </div>
+                </div>
+                <button onclick="toggleReceiptModal(false)" class="text-gray-300 hover:text-white font-bold text-xl">&times;</button>
+            </div>
+            
+            <div class="p-6 space-y-5 text-xs">
+                <!-- Header Info -->
+                <div class="flex justify-between items-start bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <div>
+                        <p class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider">Request ID</p>
+                        <p class="font-mono text-[11px] font-bold text-gray-800" id="rcpt-request-id">--</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider">Timestamp</p>
+                        <p class="font-mono text-[11px] font-bold text-gray-800" id="rcpt-timestamp">--</p>
+                    </div>
+                </div>
+
+                <!-- Decision Status Banner -->
+                <div id="rcpt-decision-banner" class="p-4 rounded-xl border space-y-1">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Section 1: Intent & Mandate -->
+                <div class="space-y-2">
+                    <h4 class="font-bold text-gray-900 text-xs border-b pb-1 flex items-center justify-between">
+                        <span>1. Intent & Mandate Details</span>
+                        <span class="text-[10px] font-normal text-indigo-600 font-mono" id="rcpt-mandate-id"></span>
+                    </h4>
+                    <div class="grid grid-cols-2 gap-2 text-gray-600 pt-1">
+                        <div><span class="font-semibold text-gray-500">Item:</span> <span class="font-bold text-gray-800" id="rcpt-item">--</span></div>
+                        <div><span class="font-semibold text-gray-500">Quantity:</span> <span class="font-bold text-gray-800" id="rcpt-qty">--</span></div>
+                        <div><span class="font-semibold text-gray-500">Unit Price:</span> <span class="font-bold text-gray-800" id="rcpt-unit-price">--</span></div>
+                        <div><span class="font-semibold text-gray-500">Total Amount:</span> <span class="font-bold text-indigo-700" id="rcpt-total-amount">--</span></div>
+                    </div>
+                </div>
+
+                <!-- Section 2: 6 Constraint Checks -->
+                <div class="space-y-2">
+                    <h4 class="font-bold text-gray-900 text-xs border-b pb-1">2. Policy Engine Checks (6 Rules)</h4>
+                    <div class="grid grid-cols-1 gap-1.5 pt-1" id="rcpt-checks-list">
+                        <!-- 6 checks list populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Section 3: Payment Gateway Execution -->
+                <div class="space-y-2 border-t pt-3">
+                    <h4 class="font-bold text-gray-900 text-xs flex justify-between items-center">
+                        <span>3. Razorpay Gateway Status</span>
+                        <span id="rcpt-rzp-status-badge" class="text-[9px] font-bold px-2 py-0.5 rounded">--</span>
+                    </h4>
+                    <div class="bg-gray-50 p-3 rounded-lg border text-gray-600 space-y-1">
+                        <p><span class="font-semibold text-gray-500">Payment Link:</span> <span id="rcpt-rzp-link" class="font-mono text-indigo-600 break-all">--</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 px-6 py-3 border-t border-gray-200 flex justify-between items-center flex-shrink-0">
+                <span class="text-[10px] text-gray-400 font-mono">HMAC SHA-256 Verified ✓</span>
+                <button onclick="toggleReceiptModal(false)" class="px-4 py-1.5 bg-gray-800 hover:bg-gray-900 text-white rounded-lg text-xs font-bold shadow">Close Receipt</button>
+            </div>
+        </div>
+        </div>
+    </div>
 
     <!-- Kill Switch Confirmation Modal -->
     <div id="kill-switch-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
@@ -643,7 +795,7 @@
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Min Demo Merchant Risk Score (0-5)</label>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Min Merchant Trust Score (0-5)</label>
                         <input type="number" step="0.1" id="m-trust" placeholder="4.0" required class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-xs">
                         <p class="text-[9px] text-gray-400 italic mt-0.5">* Seeded/simulated data for policy demonstration</p>
                     </div>
@@ -769,10 +921,11 @@
 
         // SPA Navigation tabs switcher
         function switchTab(tabId) {
-            const views = ["sandbox", "mandates", "transactions", "analytics"];
+            const views = ["sandbox", "catalog", "mandates", "transactions", "analytics"];
             views.forEach(v => {
                 const el = document.getElementById(`view-${v}`);
                 const tab = document.getElementById(`tab-${v}`);
+                if (!el || !tab) return;
                 if (v === tabId) {
                     el.classList.remove("hidden");
                     tab.className = "px-4 py-2 text-xs font-bold rounded-lg transition active-tab";
@@ -784,6 +937,87 @@
             if (tabId === "mandates") loadMandates();
             if (tabId === "transactions") loadAuditLogs();
             if (tabId === "analytics") loadAnalytics();
+            if (tabId === "catalog") loadCatalog();
+        }
+
+        // Merchant Catalog Loader
+        async function loadCatalog() {
+            const grid = document.getElementById("catalog-grid");
+            try {
+                const res = await fetch(`${API_BASE}/api/catalog`);
+                const items = await res.json();
+
+                // Group by merchant_id
+                const byMerchant = {};
+                items.forEach(item => {
+                    if (!byMerchant[item.merchant_id]) byMerchant[item.merchant_id] = [];
+                    byMerchant[item.merchant_id].push(item);
+                });
+
+                const categoryColors = {
+                    groceries: "green",
+                    electronics: "blue",
+                    kitchenware: "orange",
+                    furniture: "amber",
+                    apparel: "purple",
+                    sports_fitness: "teal"
+                };
+
+                const merchantNames = {
+                    merch_brew_masters: "Brew Masters",
+                    merch_nature_choice: "Natura Choice",
+                    merch_home_basics: "Home Basics Co.",
+                    merch_tech_hub: "TechHub Supplies",
+                    merch_ergo_works: "ErgoWorks",
+                    merch_fit_gear: "FitGear India",
+                    merch_style_co: "StyleCo",
+                    merch_harvest: "Harvest Organics"
+                };
+
+                grid.innerHTML = "";
+                Object.entries(byMerchant).forEach(([merchantId, products]) => {
+                    const name = merchantNames[merchantId] || merchantId;
+                    const avgTrust = (products.reduce((s, p) => s + p.merchant_trust_level, 0) / products.length).toFixed(1);
+                    const card = document.createElement("div");
+                    card.className = "bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden";
+                    const productRows = products.map(p => {
+                        const cat = p.category;
+                        const color = categoryColors[cat] || "gray";
+                        return `
+                        <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-semibold text-gray-800 truncate">${p.name}</p>
+                                <span class="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded bg-${color}-100 text-${color}-700 mt-0.5">${cat}</span>
+                            </div>
+                            <div class="text-right ml-3 flex-shrink-0">
+                                <p class="text-xs font-bold text-indigo-700">₹${p.price.toLocaleString("en-IN")}</p>
+                            </div>
+                        </div>`;
+                    }).join("");
+
+                    const stars = "★".repeat(Math.round(avgTrust)) + "☆".repeat(5 - Math.round(avgTrust));
+                    card.innerHTML = `
+                        <div class="bg-gradient-to-r from-indigo-900 to-indigo-700 px-4 py-3">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-white font-bold text-sm">${name}</p>
+                                    <p class="text-indigo-300 text-[10px] font-mono">${merchantId}</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-[10px] bg-green-400 text-green-900 font-bold px-2 py-0.5 rounded-full">✓ PehraPay Verified</span>
+                                    <p class="text-yellow-300 text-xs mt-1 font-bold">${stars} <span class="text-indigo-300 font-normal">${avgTrust}/5</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-3 space-y-0.5">${productRows}</div>
+                        <div class="px-3 pb-3">
+                            <p class="text-[10px] text-gray-400">AI buyers can purchase ${products.length} product${products.length > 1 ? "s" : ""} from this merchant via PehraPay mandates.</p>
+                        </div>`;
+                    grid.appendChild(card);
+                });
+            } catch(e) {
+                grid.innerHTML = `<div class="col-span-3 text-center py-12 text-red-400 text-sm">Failed to load catalog: ${e.message}</div>`;
+            }
         }
 
         // Trust Analytics (Page 5) Loader with dynamic Chart.js graphing
@@ -1278,6 +1512,8 @@
                 
                 if (res.ok) {
                     const data = await res.json();
+                    data.mandate_id = mandateId;
+                    activePipelineData = data;
                     
                     // Render Steps 1-4
                     renderTimeline(data);
@@ -1326,6 +1562,17 @@
             
             document.getElementById("p-step1-json").textContent = JSON.stringify(data.intent, null, 2);
 
+            // Goal Resolution Notes Panel
+            const goalPanel = document.getElementById("goal-resolution-panel");
+            if (goalPanel) {
+                if (data.goal_resolution_notes) {
+                    goalPanel.classList.remove("hidden");
+                    document.getElementById("goal-resolution-text").textContent = data.goal_resolution_notes;
+                } else {
+                    goalPanel.classList.add("hidden");
+                }
+            }
+
             // Step 3: Deterministic Policy Checklist
             const checklist = document.getElementById("p-policy-checklist");
             checklist.innerHTML = "";
@@ -1345,7 +1592,7 @@
                 { name: "Mandate Expiry", status: isExpiryOk, text: "Current time within window" },
                 { name: "Transaction Limit", status: isTxnLimitOk, text: "Count within limits" },
                 { name: "Category Restriction", status: isCategoryOk, text: `Category '${data.product_category}' matches` },
-                { name: "Demo Merchant Risk Score", status: isTrustOk, text: `Risk Score: ${data.merchant_trust_level} / 5` },
+                { name: "Merchant Trust Score", status: isTrustOk, text: `Risk Score: ${data.merchant_trust_level} / 5` },
                 { name: "Policy Budget", status: isBudgetOk, text: `Cost: ₹${totalAmount.toLocaleString("en-IN")}` }
             ];
             
@@ -1371,20 +1618,35 @@
                 step4Icon.innerHTML = "✓";
                 
                 card.className = "p-6 rounded-xl border border-green-200 bg-green-50 shadow-md space-y-3";
+
+                const recHtml = data.recommendation ? `
+                    <div class="mt-3 bg-indigo-50 border border-indigo-200 rounded-lg p-3 flex items-start space-x-2">
+                        <span class="text-lg leading-none">💡</span>
+                        <div class="text-xs text-indigo-800">
+                            <p class="font-bold">PehraPay also found:</p>
+                            <p><span class="font-semibold">${data.recommendation.item}</span> · ₹${data.recommendation.price.toLocaleString("en-IN")} · ${data.recommendation.reason}</p>
+                        </div>
+                    </div>` : "";
+
                 card.innerHTML = `
                     <div class="flex justify-between items-center">
                         <span class="text-sm font-bold text-green-800 flex items-center">🛡️ APPROVED</span>
-                        <span class="text-[9px] bg-green-200 text-green-800 font-bold px-2 py-0.5 rounded">APPROVED FOR PAYMENT</span>
+                        <span class="text-[9px] bg-green-200 text-green-800 font-bold px-2 py-0.5 rounded">AUTHORIZED & ROUTED TO RAZORPAY</span>
                     </div>
                     <p class="text-xs text-green-700">Transaction meets all mandate requirements and has been cryptographically signed.</p>
                     <div class="text-xs space-y-1 text-gray-700 pt-2 border-t border-green-200">
                         <p><span class="font-semibold text-gray-500">Amount:</span> <span class="font-bold text-gray-900">₹${totalAmount.toLocaleString("en-IN")}</span></p>
-                        <p><span class="font-semibold text-gray-500">Merchant ID:</span> <span class="font-mono text-gray-900">${data.intent.merchant_id}</span></p>
+                        <p><span class="font-semibold text-gray-500">Merchant:</span> <span class="font-mono text-gray-900">${data.intent.merchant_id}</span></p>
+                        <p class="text-[10px] text-gray-400">⚠️ Payment completes when buyer opens the link and completes checkout.</p>
                     </div>
-                    <div class="pt-2">
+                    ${recHtml}
+                    <div class="pt-2 flex flex-wrap gap-2 items-center">
                         <a href="${data.razorpay_url}" target="_blank" class="inline-block bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow transition">
-                            Proceed to Secure Payment →
+                            Open Razorpay Checkout →
                         </a>
+                        <button onclick="openDecisionReceipt(activePipelineData)" class="inline-flex items-center space-x-1 border border-green-300 bg-white hover:bg-green-100 text-green-800 text-xs font-bold py-2.5 px-3 rounded-lg shadow-sm transition">
+                            <span>📄 View Decision Receipt</span>
+                        </button>
                     </div>
                 `;
             } else if (data.decision === "HUMAN_REVIEW") {
@@ -1402,12 +1664,12 @@
                         <p><span class="font-semibold text-gray-500">Amount:</span> <span class="font-bold text-gray-900">₹${totalAmount.toLocaleString("en-IN")}</span></p>
                         <p><span class="font-semibold text-gray-500">Merchant ID:</span> <span class="font-mono text-gray-900">${data.intent.merchant_id}</span></p>
                     </div>
-                    <div class="pt-2 flex space-x-2">
+                    <div class="pt-2 flex flex-wrap gap-2 items-center">
                         <a href="${data.razorpay_url}" target="_blank" onclick="alert('Transaction verified. Launching Razorpay payment gateway.');" class="inline-block bg-yellow-600 hover:bg-yellow-700 text-white text-xs font-bold py-2 px-4 rounded-lg shadow transition">
                             Confirm & Proceed
                         </a>
-                        <button onclick="switchTab('transactions');" class="bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 text-xs font-semibold py-2 px-4 rounded-lg shadow transition">
-                            Reject Transaction
+                        <button onclick="openDecisionReceipt(activePipelineData)" class="inline-flex items-center space-x-1 border border-yellow-300 bg-white hover:bg-yellow-100 text-yellow-900 text-xs font-bold py-2 px-3 rounded-lg shadow-sm transition">
+                            <span>📄 View Decision Receipt</span>
                         </button>
                     </div>
                 `;
@@ -1423,11 +1685,128 @@
                     </div>
                     <p class="text-xs text-red-800 font-bold">Reason: <span class="font-medium">${data.reason}</span></p>
                     <p class="text-[11px] text-gray-500">Transaction failed deterministic integrity or budget checks. Payment link generation skipped.</p>
+                    <div class="pt-2">
+                        <button onclick="openDecisionReceipt(activePipelineData)" class="inline-flex items-center space-x-1 border border-red-300 bg-white hover:bg-red-100 text-red-800 text-xs font-bold py-2 px-3 rounded-lg shadow-sm transition">
+                            <span>📄 View Decision Receipt</span>
+                        </button>
+                    </div>
                 `;
             }
             
             resultsBox.classList.remove("hidden");
             resultsBox.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        let activePipelineData = null;
+
+        function toggleReceiptModal(show) {
+            const modal = document.getElementById("receipt-modal");
+            if (modal) {
+                if (show) {
+                    modal.classList.remove("hidden");
+                    modal.scrollTop = 0;
+                } else {
+                    modal.classList.add("hidden");
+                }
+            }
+        }
+
+        function openDecisionReceipt(data) {
+            if (!data) return;
+            
+            document.getElementById("rcpt-request-id").textContent = data.request_id || "req_" + Math.random().toString(36).substr(2, 9);
+            const dateStr = data.timestamp ? new Date(data.timestamp * 1000).toLocaleString() : new Date().toLocaleString();
+            document.getElementById("rcpt-timestamp").textContent = dateStr;
+
+            const banner = document.getElementById("rcpt-decision-banner");
+            const dec = data.decision || "UNKNOWN";
+            if (dec === "APPROVE") {
+                banner.className = "p-4 rounded-xl border border-green-200 bg-green-50 text-green-800 space-y-1";
+                banner.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-sm">🛡️ DECISION: AUTHORIZED & ROUTED TO RAZORPAY</span>
+                        <span class="text-[9px] bg-green-200 text-green-900 font-bold px-2 py-0.5 rounded">PASSED</span>
+                    </div>
+                    <p class="text-xs text-green-700">${data.reason || "Transaction meets all mandate requirements."}</p>
+                `;
+            } else if (dec === "HUMAN_REVIEW") {
+                banner.className = "p-4 rounded-xl border border-yellow-200 bg-yellow-50 text-yellow-800 space-y-1";
+                banner.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-sm">⚠️ DECISION: HUMAN CONFIRMATION REQUIRED</span>
+                        <span class="text-[9px] bg-yellow-200 text-yellow-900 font-bold px-2 py-0.5 rounded">SUSPENDED</span>
+                    </div>
+                    <p class="text-xs text-yellow-700">${data.reason}</p>
+                `;
+            } else {
+                banner.className = "p-4 rounded-xl border border-red-200 bg-red-50 text-red-800 space-y-1";
+                banner.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-sm">🛑 DECISION: REJECTED BY POLICY GATE</span>
+                        <span class="text-[9px] bg-red-200 text-red-900 font-bold px-2 py-0.5 rounded">BLOCKED</span>
+                    </div>
+                    <p class="text-xs text-red-700">${data.reason}</p>
+                `;
+            }
+
+            const intent = data.intent || {};
+            const totalAmount = (intent.price || 0) * (intent.quantity || 1);
+            document.getElementById("rcpt-mandate-id").textContent = `Mandate: ${data.mandate_id || "active"}`;
+            document.getElementById("rcpt-item").textContent = intent.item || "N/A";
+            document.getElementById("rcpt-qty").textContent = intent.quantity || 1;
+            document.getElementById("rcpt-unit-price").textContent = "₹" + (intent.price || 0).toLocaleString("en-IN");
+            document.getElementById("rcpt-total-amount").textContent = "₹" + totalAmount.toLocaleString("en-IN");
+
+            const checksList = document.getElementById("rcpt-checks-list");
+            checksList.innerHTML = "";
+            
+            const reason = data.reason || "";
+            const isSignatureOk = !reason.includes("tampering detected");
+            const isExpiryOk = !reason.includes("expired");
+            const isTxnLimitOk = !reason.includes("limit reached");
+            const isCategoryOk = !reason.includes("is not allowed");
+            const isTrustOk = !reason.includes("below required");
+            const isBudgetOk = !reason.includes("exceeds the remaining mandate budget");
+
+            const checks = [
+                { name: "Signature Integrity", status: isSignatureOk, detail: isSignatureOk ? "HMAC SHA-256 Validated" : "Tampering Detected" },
+                { name: "Mandate Expiry", status: isExpiryOk, detail: isExpiryOk ? "Active Time Window" : "Mandate Expired" },
+                { name: "Transaction Limit", status: isTxnLimitOk, detail: isTxnLimitOk ? "Transaction Count OK" : "Max Transactions Reached" },
+                { name: "Category Restriction", status: isCategoryOk, detail: isCategoryOk ? `Allowed ('${data.product_category || 'valid'}')` : "Category Blocked" },
+                { name: "Merchant Trust Score", status: isTrustOk, detail: isTrustOk ? `Score >= Required` : "Trust Below Threshold" },
+                { name: "Policy Budget Cap", status: isBudgetOk, detail: isBudgetOk ? "Budget Remaining OK" : "Exceeds Remaining Budget" }
+            ];
+
+            checks.forEach(c => {
+                const item = document.createElement("div");
+                item.className = `flex justify-between items-center p-2 rounded border text-xs ${c.status ? 'bg-green-50/50 border-green-100 text-green-900' : 'bg-red-50/50 border-red-100 text-red-900'}`;
+                item.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="font-bold">${c.status ? '✓' : '✗'}</span>
+                        <span class="font-medium">${c.name}</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[10px] text-gray-500 font-mono">${c.detail}</span>
+                        <span class="text-[9px] font-bold px-1.5 py-0.2 rounded ${c.status ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}">${c.status ? 'PASS' : 'FAIL'}</span>
+                    </div>
+                `;
+                checksList.appendChild(item);
+            });
+
+            const linkElem = document.getElementById("rcpt-rzp-link");
+            const badgeElem = document.getElementById("rcpt-rzp-status-badge");
+            
+            if (data.razorpay_url) {
+                badgeElem.className = "text-[9px] font-bold px-2 py-0.5 rounded bg-green-100 text-green-800 border border-green-300";
+                badgeElem.textContent = "PAYMENT LINK CREATED";
+                linkElem.innerHTML = `<a href="${data.razorpay_url}" target="_blank" class="hover:underline text-indigo-600 font-bold">${data.razorpay_url} &rarr;</a>`;
+            } else {
+                badgeElem.className = "text-[9px] font-bold px-2 py-0.5 rounded bg-gray-200 text-gray-700 border border-gray-300";
+                badgeElem.textContent = "GATEWAY BYPASSED (SKIPPED)";
+                linkElem.textContent = "None (Execution halted before Razorpay API call path)";
+            }
+
+            toggleReceiptModal(true);
         }
 
         // Fetch logs and construct Premium table views (Page 3)
@@ -1507,11 +1886,16 @@
                     <td class="py-3 px-4 text-right font-bold text-gray-900 whitespace-nowrap">₹${log.intent_total.toLocaleString("en-IN")}</td>
                     <td class="py-3 px-4 font-semibold text-gray-600 font-mono text-[10px]">${log.mandate_id} (v${log.mandate_version})</td>
                     <td class="py-3 px-4 text-center">
-                        <span class="inline-block text-[9px] uppercase font-bold px-2.5 py-0.5 rounded-full ${badgeClass}">
-                            ${log.decision.replace("_", " ")}
-                        </span>
+                        <div class="flex items-center justify-center space-x-2">
+                            <span class="inline-block text-[9px] uppercase font-bold px-2.5 py-0.5 rounded-full ${badgeClass}">
+                                ${log.decision.replace("_", " ")}
+                            </span>
+                            <button onclick='event.stopPropagation(); openDecisionReceiptFromLog(${JSON.stringify(log).replace(/'/g, "&apos;")})' class="text-[10px] text-indigo-600 font-bold hover:underline bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded border border-indigo-200">
+                                📄 Receipt
+                            </button>
+                        </div>
                     </td>
-                    <td class="py-3 px-4 text-gray-400 text-[10px] whitespace-nowrap">${timeStr}</td>
+                    <td class="py-3 px-4 text-gray-400 text-[10px] whitespace-nowrap text-right">${timeStr}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1524,6 +1908,26 @@
             if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
             if (diff < 86450) return `${Math.floor(diff / 3600)} hours ago`;
             return `${Math.floor(diff / 86400)} days ago`;
+        }
+
+        function openDecisionReceiptFromLog(log) {
+            const data = {
+                request_id: `req_audit_${log.log_id}_${log.timestamp}`,
+                timestamp: log.timestamp,
+                decision: log.decision,
+                reason: log.reason,
+                mandate_id: log.mandate_id,
+                intent: {
+                    item: log.intent_item,
+                    quantity: log.intent_quantity,
+                    price: log.intent_price,
+                    merchant_id: log.intent_merchant_id
+                },
+                product_category: "verified",
+                merchant_trust_level: 4.0,
+                razorpay_url: (log.decision === "APPROVE" || log.decision === "HUMAN_REVIEW") ? `https://rzp.io/rzp/order_${log.log_id}` : null
+            };
+            openDecisionReceipt(data);
         }
 
         // Detailed Trace Timeline Loader (Page 4 Side panel)

@@ -1,3 +1,4 @@
+import re
 import os
 import json
 import time
@@ -25,7 +26,7 @@ def get_idempotency_key(mandate_id: str, request_str: str) -> str:
 
 def clean_idempotency_cache():
     now = time.time()
-    expired = [k for k, v in idempotency_cache.items() if (now - v["timestamp"]) > 60.0]
+    expired = [k for k, v in idempotency_cache.items() if (now - v["timestamp"]) > 300.0]
     for k in expired:
         del idempotency_cache[k]
 
@@ -61,6 +62,120 @@ def get_product_details(product_name: str, catalog: list):
                 return details
         return {"category": "unknown", "merchant_trust_level": 0.0}
     return item_details
+
+# Helper: Goal-Based Product Selection Resolver
+def resolve_goal_based_request(buyer_request: str, intent: dict, catalog: list):
+    """
+    1. Check if intent['item'] has an EXACT match in catalog.json.
+       If YES -> Return exact match (EXISTING flow unchanged).
+    2. If NO exact match -> Ambiguous / Goal-Based Request.
+       Extract category & max_price constraints from buyer_request / intent.
+    3. Filter catalog items by category and price <= max_price.
+    4. Select product with HIGHEST merchant_trust_level (deterministic selection).
+    5. Log clear rationale.
+    6. If NO products match -> Return None + error message.
+    """
+    requested_item = intent.get("item", "").strip()
+
+    # Step 1: Exact Name Match check (case-insensitive)
+    for item in catalog:
+        if item["name"].strip().lower() == requested_item.lower():
+            return item, None
+
+    # Step 2: Goal-based constraint parsing
+    text = f"{buyer_request} {requested_item}".lower()
+
+    # Parse max_price constraint (e.g. "under 1000", "below rs. 500", "max 2000", "< 1500")
+    max_price = None
+    price_match = re.search(r'(?:under|below|max|within|<|less than|budget of|budget)\s*(?:rs\.?|₹)?\s*(\d+(?:\.\d+)?)', text)
+    if price_match:
+        max_price = float(price_match.group(1))
+
+    # Parse category & keywords
+    all_categories = list({item["category"].lower() for item in catalog})
+    matched_category = None
+    for cat in all_categories:
+        if cat in text:
+            matched_category = cat
+            break
+
+    keyword_map = {
+        "coffee": ["groceries", "coffee"],
+        "tea": ["groceries", "tea"],
+        "drink": ["groceries"],
+        "food": ["groceries"],
+        "snack": ["groceries"],
+        "chair": ["furniture"],
+        "desk": ["furniture", "electronics"],
+        "lamp": ["electronics"],
+        "light": ["electronics"],
+        "bottle": ["sports_fitness"],
+        "workout": ["sports_fitness"],
+        "fitness": ["sports_fitness"],
+        "headphone": ["electronics"],
+        "audio": ["electronics"],
+        "keyboard": ["electronics"],
+        "stand": ["electronics"],
+        "hub": ["electronics"],
+        "tech": ["electronics"],
+        "gadget": ["electronics"],
+        "electronics": ["electronics"],
+        "accessory": ["electronics", "kitchenware"],
+        "accessories": ["electronics", "kitchenware"],
+        "mug": ["kitchenware"],
+        "cup": ["kitchenware"],
+        "wallet": ["apparel"]
+    }
+
+    keywords = []
+    for word, cat_list in keyword_map.items():
+        if word in text:
+            keywords.append(word)
+            if not matched_category:
+                matched_category = cat_list[0]
+
+    # Step 3: Search catalog for matching products
+    matching_products = []
+    for item in catalog:
+        cat_match = False
+        if matched_category:
+            # Strict category filter: item's actual category MUST match matched_category
+            if item["category"].lower() == matched_category:
+                cat_match = True
+        else:
+            # Keyword fallback ONLY when no category was detected at all
+            if any(kw in item["name"].lower() or kw in item["category"].lower() for kw in keywords):
+                cat_match = True
+
+        if not cat_match:
+            continue
+
+        if max_price is not None and item["price"] > max_price:
+            continue
+
+        matching_products.append(item)
+
+    # Step 7: No matching products found
+    if not matching_products:
+        return None, "No catalog products found matching your request criteria"
+
+    # Step 4: Select product with HIGHEST merchant_trust_level
+    matching_products.sort(key=lambda x: (x["merchant_trust_level"], -x["price"]), reverse=True)
+    selected_product = matching_products[0]
+
+    # Step 5: Log rationale summary
+    matched_summary = ", ".join([f"{p['name']} (₹{p['price']}, trust {p['merchant_trust_level']})" for p in matching_products])
+    constraint_str = f"category '{matched_category or 'general'}'"
+    if max_price:
+        constraint_str += f" under ₹{max_price:g}"
+
+    resolution_notes = (
+        f"[GOAL RESOLVER] {len(matching_products)} catalog product(s) matched {constraint_str}: "
+        f"[{matched_summary}] — selected '{selected_product['name']}' for highest trust score ({selected_product['merchant_trust_level']})."
+    )
+    print(resolution_notes)
+
+    return selected_product, resolution_notes
 
 # Seed DB if empty
 def seed_database():
@@ -243,14 +358,14 @@ def execute_purchase(req: PurchaseRequest):
     now_ts = time.time()
     clean_idempotency_cache()
 
-    # Generate request_id for idempotency check (10s window)
+    # Generate request_id for idempotency check (60s window)
     request_id = get_idempotency_key(req.mandate_id, req.buyer_request)
 
-    # Check if identical request was processed in last 10 seconds
+    # Check if identical request was processed in last 60 seconds
     if request_id in idempotency_cache:
         entry = idempotency_cache[request_id]
-        if (now_ts - entry["timestamp"]) <= 10.0:
-            print(f"[IDEMPOTENCY] Replayed duplicate request '{req.buyer_request}' within 10s window (request_id: {request_id[:12]}...). Returning cached result.")
+        if (now_ts - entry["timestamp"]) <= 60.0:
+            print(f"[IDEMPOTENCY] Replayed duplicate request '{req.buyer_request}' within 60s window (request_id: {request_id[:12]}...). Returning cached result.")
             cached_resp = dict(entry["response"])
             cached_resp["idempotent_replay"] = True
             return cached_resp
@@ -299,16 +414,52 @@ def execute_purchase(req: PurchaseRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to parse request: {e}")
 
-    # 2. Match catalog properties & Enforce Authoritative Catalog Price
-    product_details = get_product_details(intent["item"], catalog)
-    category = product_details.get("category", "unknown")
-    trust_level = product_details.get("merchant_trust_level", 0.0)
+    # 2. Match catalog properties & Goal-Based Product Selection
+    resolved_product, goal_notes_or_error = resolve_goal_based_request(req.buyer_request, intent, catalog)
 
-    # Security Fix: Override LLM price with authoritative catalog price
+    if not resolved_product:
+        # Step 7: No catalog products match criteria -> REJECT
+        decision = "REJECT"
+        reason = goal_notes_or_error or "No catalog products found matching your request criteria"
+        try:
+            store.log_audit(
+                timestamp=int(time.time()),
+                mandate_id=req.mandate_id,
+                buyer_request=req.buyer_request,
+                intent=intent,
+                decision=decision,
+                reason=reason,
+                mandate_version=mandate["version"]
+            )
+        except Exception as e:
+            print(f"Warning: Failed to log audit: {e}")
+
+        response_payload = {
+            "intent": intent,
+            "product_category": "unknown",
+            "merchant_trust_level": 0.0,
+            "decision": decision,
+            "reason": reason,
+            "razorpay_url": None,
+            "fallback_active": fallback_active,
+            "razorpay_fallback_active": rzp.fallback_active,
+            "request_id": request_id,
+            "idempotent_replay": False,
+            "goal_resolution_notes": None
+        }
+        idempotency_cache[request_id] = {"timestamp": now_ts, "response": response_payload}
+        return response_payload
+
+    product_details = resolved_product
+    category = product_details.get("category", "unknown")
+    trust_level = float(product_details.get("merchant_trust_level", 0.0))
+
+    # Overwrite intent with authoritative catalog details
+    intent["item"] = product_details["name"]
     if "price" in product_details:
         intent["price"] = float(product_details["price"])
-        if "merchant_id" in product_details:
-            intent["merchant_id"] = product_details["merchant_id"]
+    if "merchant_id" in product_details:
+        intent["merchant_id"] = product_details["merchant_id"]
 
     # 3. Evaluate Policy Engine
     try:
@@ -367,6 +518,30 @@ def execute_purchase(req: PurchaseRequest):
         except Exception as e:
             print(f"Warning: Failed to create order for human review: {e}")
 
+    # C3 — Intelligent Cross-Sell Recommendation (within mandate constraints)
+    recommendation = None
+    if decision == "APPROVE":
+        try:
+            remaining_budget = mandate["max_amount"] - store.get_spent_amount(req.mandate_id)
+            candidates = [
+                p for p in catalog
+                if p["name"] != product_details["name"]
+                and p.get("category", "").lower() == category
+                and float(p.get("price", 0)) <= remaining_budget
+                and float(p.get("merchant_trust_level", 0)) >= mandate.get("allowed_merchant_trust_level", 0)
+            ]
+            if candidates:
+                candidates.sort(key=lambda x: x["merchant_trust_level"], reverse=True)
+                rec = candidates[0]
+                recommendation = {
+                    "item": rec["name"],
+                    "price": rec["price"],
+                    "merchant_trust_level": rec["merchant_trust_level"],
+                    "reason": f"Also in {category} · ₹{rec['price']:g} · trust {rec['merchant_trust_level']}/5 · within your remaining mandate budget"
+                }
+        except Exception as e:
+            print(f"Warning: Recommendation generation failed: {e}")
+
     # Return response payload
     response_payload = {
         "intent": intent,
@@ -378,7 +553,9 @@ def execute_purchase(req: PurchaseRequest):
         "fallback_active": fallback_active,
         "razorpay_fallback_active": rzp.fallback_active,
         "request_id": request_id,
-        "idempotent_replay": False
+        "idempotent_replay": False,
+        "goal_resolution_notes": goal_notes_or_error,
+        "recommendation": recommendation
     }
 
     # Cache response for idempotency protection
