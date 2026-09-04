@@ -138,14 +138,14 @@ def resolve_goal_based_request(buyer_request: str, intent: dict, catalog: list):
 class AgentParser:
     def __init__(self):
         self.last_call_fallback = False
+        self.candidate_models = ["gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-flash-latest"]
         self.api_key = os.getenv("GEMINI_API_KEY")
-        if self.api_key and "AQ." in self.api_key or len(self.api_key) > 10:
+        if self.api_key and ("AQ." in self.api_key or len(self.api_key) > 10):
             try:
                 import google.generativeai as genai
                 genai.configure(api_key=self.api_key)
-                self.model = genai.GenerativeModel("gemini-3.6-flash")
                 self.client_enabled = True
-                print("Gemini client successfully initialized with gemini-3.6-flash.")
+                print("Gemini client successfully initialized with model cascade:", self.candidate_models)
             except ImportError:
                 print("Warning: 'google-generativeai' package not installed. Running in mock mode.")
                 self.client_enabled = False
@@ -185,15 +185,11 @@ class AgentParser:
             f"Extract the structured intent matching the schema."
         )
 
-        import time as pytime
-
-        max_retries = 3
-        backoff_delay = 5.0
-
-        for attempt in range(max_retries):
+        last_error = None
+        for model_name in self.candidate_models:
             try:
-                # Call Gemini using GenerationConfig with response_schema
-                response = self.model.generate_content(
+                model = genai.GenerativeModel(model_name)
+                response = model.generate_content(
                     prompt,
                     generation_config=genai.types.GenerationConfig(
                         response_mime_type="application/json",
@@ -221,17 +217,15 @@ class AgentParser:
                     intent["item"] = matched_item["name"]
                     intent["merchant_id"] = matched_item["merchant_id"]
                 
+                self.last_call_fallback = False
                 return intent
             except Exception as e:
-                is_429 = "429" in str(e) or "ResourceExhausted" in type(e).__name__ or "quota" in str(e).lower()
-                if is_429 and attempt < max_retries - 1:
-                    wait_time = backoff_delay * (2 ** attempt)
-                    print(f"[RETRY] Gemini API returned 429 (quota exceeded). Retrying in {wait_time:.1f} seconds... (Attempt {attempt+1}/{max_retries})")
-                    pytime.sleep(wait_time)
-                else:
-                    print(f"[WARNING] LLM fallback active - real Gemini call failed. Error: {e}")
-                    self.last_call_fallback = True
-                    return self._parse_mock(buyer_request, catalog)
+                last_error = e
+                print(f"[CASCADE] Model {model_name} encountered {type(e).__name__}. Cascading to next candidate...")
+
+        print(f"[WARNING] LLM fallback active - all Gemini models in cascade failed. Error: {last_error}")
+        self.last_call_fallback = True
+        return self._parse_mock(buyer_request, catalog)
 
     def _parse_mock(self, buyer_request: str, catalog: list) -> dict:
         """
