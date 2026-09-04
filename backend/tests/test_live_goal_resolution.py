@@ -17,6 +17,10 @@ def test_live_goal_resolution_pipeline():
 
     mandate_id = "mandate_coffee"
     mandate = store.get_mandate(mandate_id)
+    if not mandate:
+        from backend.main import seed_database
+        seed_database()
+        mandate = store.get_mandate(mandate_id)
     assert mandate is not None, f"Mandate '{mandate_id}' not found in database!"
 
     print(f"[SETUP] Mandate: '{mandate['purpose']}' ({mandate_id} v{mandate['version']})")

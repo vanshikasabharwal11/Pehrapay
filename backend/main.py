@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 import hashlib
-from backend.agent.parser import AgentParser
+from backend.agent.parser import AgentParser, resolve_goal_based_request
 from backend.razorpay_client.client import RazorpayClientWrapper
 from backend.mandates.models import SpendingMandate
 from backend.mandates.store import MandateStore
@@ -62,120 +62,6 @@ def get_product_details(product_name: str, catalog: list):
                 return details
         return {"category": "unknown", "merchant_trust_level": 0.0}
     return item_details
-
-# Helper: Goal-Based Product Selection Resolver
-def resolve_goal_based_request(buyer_request: str, intent: dict, catalog: list):
-    """
-    1. Check if intent['item'] has an EXACT match in catalog.json.
-       If YES -> Return exact match (EXISTING flow unchanged).
-    2. If NO exact match -> Ambiguous / Goal-Based Request.
-       Extract category & max_price constraints from buyer_request / intent.
-    3. Filter catalog items by category and price <= max_price.
-    4. Select product with HIGHEST merchant_trust_level (deterministic selection).
-    5. Log clear rationale.
-    6. If NO products match -> Return None + error message.
-    """
-    requested_item = intent.get("item", "").strip()
-
-    # Step 1: Exact Name Match check (case-insensitive)
-    for item in catalog:
-        if item["name"].strip().lower() == requested_item.lower():
-            return item, None
-
-    # Step 2: Goal-based constraint parsing
-    text = f"{buyer_request} {requested_item}".lower()
-
-    # Parse max_price constraint (e.g. "under 1000", "below rs. 500", "max 2000", "< 1500")
-    max_price = None
-    price_match = re.search(r'(?:under|below|max|within|<|less than|budget of|budget)\s*(?:rs\.?|₹)?\s*(\d+(?:\.\d+)?)', text)
-    if price_match:
-        max_price = float(price_match.group(1))
-
-    # Parse category & keywords
-    all_categories = list({item["category"].lower() for item in catalog})
-    matched_category = None
-    for cat in all_categories:
-        if cat in text:
-            matched_category = cat
-            break
-
-    keyword_map = {
-        "coffee": ["groceries", "coffee"],
-        "tea": ["groceries", "tea"],
-        "drink": ["groceries"],
-        "food": ["groceries"],
-        "snack": ["groceries"],
-        "chair": ["furniture"],
-        "desk": ["furniture", "electronics"],
-        "lamp": ["electronics"],
-        "light": ["electronics"],
-        "bottle": ["sports_fitness"],
-        "workout": ["sports_fitness"],
-        "fitness": ["sports_fitness"],
-        "headphone": ["electronics"],
-        "audio": ["electronics"],
-        "keyboard": ["electronics"],
-        "stand": ["electronics"],
-        "hub": ["electronics"],
-        "tech": ["electronics"],
-        "gadget": ["electronics"],
-        "electronics": ["electronics"],
-        "accessory": ["electronics", "kitchenware"],
-        "accessories": ["electronics", "kitchenware"],
-        "mug": ["kitchenware"],
-        "cup": ["kitchenware"],
-        "wallet": ["apparel"]
-    }
-
-    keywords = []
-    for word, cat_list in keyword_map.items():
-        if word in text:
-            keywords.append(word)
-            if not matched_category:
-                matched_category = cat_list[0]
-
-    # Step 3: Search catalog for matching products
-    matching_products = []
-    for item in catalog:
-        cat_match = False
-        if matched_category:
-            # Strict category filter: item's actual category MUST match matched_category
-            if item["category"].lower() == matched_category:
-                cat_match = True
-        else:
-            # Keyword fallback ONLY when no category was detected at all
-            if any(kw in item["name"].lower() or kw in item["category"].lower() for kw in keywords):
-                cat_match = True
-
-        if not cat_match:
-            continue
-
-        if max_price is not None and item["price"] > max_price:
-            continue
-
-        matching_products.append(item)
-
-    # Step 7: No matching products found
-    if not matching_products:
-        return None, "No catalog products found matching your request criteria"
-
-    # Step 4: Select product with HIGHEST merchant_trust_level
-    matching_products.sort(key=lambda x: (x["merchant_trust_level"], -x["price"]), reverse=True)
-    selected_product = matching_products[0]
-
-    # Step 5: Log rationale summary
-    matched_summary = ", ".join([f"{p['name']} (₹{p['price']}, trust {p['merchant_trust_level']})" for p in matching_products])
-    constraint_str = f"category '{matched_category or 'general'}'"
-    if max_price:
-        constraint_str += f" under ₹{max_price:g}"
-
-    resolution_notes = (
-        f"[GOAL RESOLVER] {len(matching_products)} catalog product(s) matched {constraint_str}: "
-        f"[{matched_summary}] — selected '{selected_product['name']}' for highest trust score ({selected_product['merchant_trust_level']})."
-    )
-    print(resolution_notes)
-
-    return selected_product, resolution_notes
 
 # Seed DB if empty
 def seed_database():
@@ -281,6 +167,7 @@ def startup_event():
 class PurchaseRequest(BaseModel):
     buyer_request: str
     mandate_id: str
+    is_recommendation_accepted: Optional[bool] = False
 
 class MandateCreateRequest(BaseModel):
     mandate_id: str
@@ -415,7 +302,9 @@ def execute_purchase(req: PurchaseRequest):
         raise HTTPException(status_code=500, detail=f"Failed to parse request: {e}")
 
     # 2. Match catalog properties & Goal-Based Product Selection
+    existing_goal_notes = intent.get("goal_resolution_notes")
     resolved_product, goal_notes_or_error = resolve_goal_based_request(req.buyer_request, intent, catalog)
+    goal_notes_or_error = goal_notes_or_error or existing_goal_notes
 
     if not resolved_product:
         # Step 7: No catalog products match criteria -> REJECT
@@ -473,31 +362,22 @@ def execute_purchase(req: PurchaseRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Policy evaluation error: {e}")
 
-    # 4. Log to Audit
-    try:
-        store.log_audit(
-            timestamp=int(time.time()),
-            mandate_id=req.mandate_id,
-            buyer_request=req.buyer_request,
-            intent=intent,
-            decision=decision,
-            reason=reason,
-            mandate_version=mandate["version"]
-        )
-    except Exception as e:
-        print(f"Warning: Failed to log audit: {e}")
-
-    # 5. Conditional payment execution
+    # 4. Conditional payment execution & order generation
+    order_id = None
     razorpay_url = None
+    trans_status = "BLOCKED"
+
     if decision == "APPROVE":
+        trans_status = "AUTHORIZED"
         try:
             total_price = intent["price"] * intent["quantity"]
             description = f"Purchase: {intent['quantity']}x {intent['item']}"
             
             # Create order and link
             order_res = rzp.create_order(amount_in_rupees=total_price)
+            order_id = order_res["order_id"]
             razorpay_url = rzp.generate_payment_link(
-                order_id=order_res["order_id"],
+                order_id=order_id,
                 amount_in_rupees=total_price,
                 description=description
             )
@@ -506,17 +386,36 @@ def execute_purchase(req: PurchaseRequest):
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Razorpay execution failed: {e}")
     elif decision == "HUMAN_REVIEW":
+        trans_status = "SUSPENDED"
         try:
             total_price = intent["price"] * intent["quantity"]
             description = f"Purchase: {intent['quantity']}x {intent['item']} (Human Approved)"
             order_res = rzp.create_order(amount_in_rupees=total_price)
+            order_id = order_res["order_id"]
             razorpay_url = rzp.generate_payment_link(
-                order_id=order_res["order_id"],
+                order_id=order_id,
                 amount_in_rupees=total_price,
                 description=description
             )
         except Exception as e:
             print(f"Warning: Failed to create order for human review: {e}")
+
+    # 5. Log to Audit with real order_id, status, and recommendation acceptance flag
+    try:
+        store.log_audit(
+            timestamp=int(time.time()),
+            mandate_id=req.mandate_id,
+            buyer_request=req.buyer_request,
+            intent=intent,
+            decision=decision,
+            reason=reason,
+            mandate_version=mandate["version"],
+            order_id=order_id,
+            status=trans_status,
+            is_recommendation_accepted=bool(req.is_recommendation_accepted)
+        )
+    except Exception as e:
+        print(f"Warning: Failed to log audit: {e}")
 
     # C3 — Intelligent Cross-Sell Recommendation (within mandate constraints)
     recommendation = None
@@ -549,6 +448,8 @@ def execute_purchase(req: PurchaseRequest):
         "merchant_trust_level": trust_level,
         "decision": decision,
         "reason": reason,
+        "order_id": order_id,
+        "status": trans_status,
         "razorpay_url": razorpay_url,
         "fallback_active": fallback_active,
         "razorpay_fallback_active": rzp.fallback_active,
@@ -565,6 +466,68 @@ def execute_purchase(req: PurchaseRequest):
     }
 
     return response_payload
+
+@app.post("/api/webhooks/razorpay")
+def razorpay_webhook(data: dict):
+    """
+    Receives and processes simulated or real Razorpay webhook events (order.paid / payment.captured).
+    Verifies that order_id exists in the transaction store, transitions status from 
+    AUTHORIZED to PAID_SETTLED, records payment_id and settlement timestamp, and is idempotent.
+    """
+    # 1. Parse order_id and payment_id from standard Razorpay payload or flat simulation payload
+    order_id = data.get("order_id")
+    payment_id = data.get("payment_id")
+    status = data.get("status", "paid")
+    event = data.get("event", "order.paid")
+
+    if not order_id and "payload" in data:
+        p = data.get("payload", {})
+        if "payment" in p and "entity" in p["payment"]:
+            order_id = p["payment"]["entity"].get("order_id")
+            payment_id = payment_id or p["payment"]["entity"].get("id")
+        elif "order" in p and "entity" in p["order"]:
+            order_id = p["order"]["entity"].get("id")
+
+    if not order_id:
+        raise HTTPException(status_code=400, detail="Missing order_id in webhook payload.")
+
+    # Generate payment_id if not provided
+    if not payment_id:
+        payment_id = f"pay_{hashlib.sha256(f'{order_id}:{time.time()}'.encode()).hexdigest()[:14]}"
+
+    # 2. Verify order_id exists in audit_logs
+    record = store.get_audit_log_by_order_id(order_id)
+    if not record:
+        raise HTTPException(status_code=404, detail=f"Order '{order_id}' not found in audit store.")
+
+    # 3. Idempotent settlement update (does not double-deduct or corrupt budget)
+    settlement_ts = int(time.time())
+    updated_record = store.update_transaction_settlement(
+        order_id=order_id,
+        payment_id=payment_id,
+        settlement_timestamp=settlement_ts
+    )
+
+    return {
+        "status": "success",
+        "event": event,
+        "order_id": order_id,
+        "payment_id": updated_record["payment_id"],
+        "transaction_status": updated_record["status"],
+        "settled_at": updated_record["settlement_timestamp"],
+        "mandate_id": updated_record["mandate_id"],
+        "amount": updated_record["intent_total"]
+    }
+
+@app.get("/api/analytics/summary")
+def get_analytics_summary():
+    """
+    Returns real live-session analytics calculated strictly from the SQLite audit_logs table.
+    """
+    try:
+        return store.get_analytics_summary()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/system/status")
 def get_system_status():

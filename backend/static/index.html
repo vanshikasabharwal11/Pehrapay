@@ -149,6 +149,17 @@
                             <div>
                                 <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Natural Language Request</label>
                                 <textarea id="p-buyer-request" rows="4" required placeholder="Type purchase instructions for the AI Agent (e.g. 'Please buy 1 box of arabica coffee beans' or 'Order 3 adjustable laptop stands.')" class="w-full mt-1.5 px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                                
+                                <!-- Quick-Test Demo Preset Badges -->
+                                <div class="mt-2.5">
+                                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1.5">⚡ Quick-Test Demo Presets:</p>
+                                    <div class="flex flex-wrap gap-1.5 text-[10px]">
+                                        <button type="button" onclick="applyPreset('mandate_coffee', 'buy me coffee under ₹1000')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold px-2 py-1 rounded border border-indigo-200 transition">🎯 Goal Discovery</button>
+                                        <button type="button" onclick="applyPreset('mandate_coffee', 'buy 1 wireless noise-cancelling headphone')" class="bg-red-50 hover:bg-red-100 text-red-700 font-semibold px-2 py-1 rounded border border-red-200 transition">🛑 Category Breach</button>
+                                        <button type="button" onclick="applyPreset('mandate_dev', 'buy 3 usb-c hubs')" class="bg-yellow-50 hover:bg-yellow-100 text-yellow-800 font-semibold px-2 py-1 rounded border border-yellow-200 transition">⚠️ Risk Review</button>
+                                        <button type="button" onclick="applyPreset('mandate_coffee', 'buy 1 box of arabica coffee beans')" class="bg-green-50 hover:bg-green-100 text-green-700 font-semibold px-2 py-1 rounded border border-green-200 transition">⚡ Idempotency</button>
+                                    </div>
+                                </div>
                             </div>
 
                             <button type="submit" id="submit-purchase-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg text-sm shadow-md transition duration-150 flex justify-center items-center">
@@ -454,12 +465,44 @@
         <!-- ========================================================================= -->
         <section id="view-catalog" class="hidden space-y-6">
             <!-- Header -->
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
                 <div>
                     <h2 class="text-xl font-bold text-gray-900">🏪 AI-Readable Merchant Catalog</h2>
                     <p class="text-sm text-gray-500 mt-1">Merchants publish their structured catalog here so AI buyers can discover and transact with them through PehraPay.</p>
                 </div>
-                <span class="text-xs bg-green-100 text-green-800 font-bold px-3 py-1.5 rounded-full border border-green-200">✓ PehraPay Verified Merchants</span>
+                <span class="self-start sm:self-center text-xs bg-green-100 text-green-800 font-bold px-3 py-1.5 rounded-full border border-green-200 shadow-sm flex-shrink-0">✓ PehraPay Verified Merchants</span>
+            </div>
+
+            <!-- Live Session Growth Banner (Priority 3: Strictly Real Query Data) -->
+            <div id="catalog-growth-banner" class="bg-gray-900 bg-gradient-to-r from-gray-900 via-indigo-900 to-gray-900 text-white p-5 rounded-xl border border-indigo-800 shadow-md">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-indigo-800/60 pb-3 mb-3">
+                    <div class="flex items-center space-x-2">
+                        <span class="h-2.5 w-2.5 rounded-full bg-green-400 animate-pulse flex-shrink-0"></span>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-200">Live Demo Session Activity Metrics</h3>
+                    </div>
+                    <span class="text-[10px] bg-indigo-900/90 text-indigo-300 px-2.5 py-1 rounded-full font-mono border border-indigo-700/80 self-start sm:self-auto">Real SQLite Query Data</span>
+                </div>
+                <div id="growth-metrics-content" class="grid grid-cols-2 sm:grid-cols-4 gap-3 items-stretch">
+                    <div class="p-3 bg-white/5 rounded-lg border border-white/10 flex flex-col justify-between items-center text-center min-h-[86px]">
+                        <p class="text-[10px] text-gray-300 uppercase font-bold tracking-wider leading-snug">Total Approved GMV</p>
+                        <p class="text-lg sm:text-xl font-bold text-green-400 mt-1" style="color: #34d399;" id="metric-gmv">--</p>
+                    </div>
+                    <div class="p-3 bg-white/5 rounded-lg border border-white/10 flex flex-col justify-between items-center text-center min-h-[86px]">
+                        <p class="text-[10px] text-gray-300 uppercase font-bold tracking-wider leading-snug">Settled Revenue</p>
+                        <p class="text-lg sm:text-xl font-bold text-indigo-300 mt-1" style="color: #a5b4fc;" id="metric-settled">--</p>
+                    </div>
+                    <div class="p-3 bg-white/5 rounded-lg border border-white/10 flex flex-col justify-between items-center text-center min-h-[86px]">
+                        <p class="text-[10px] text-gray-300 uppercase font-bold tracking-wider leading-snug">AI Approval Rate</p>
+                        <p class="text-lg sm:text-xl font-bold text-blue-300 mt-1" style="color: #93c5fd;" id="metric-approval-rate">--</p>
+                    </div>
+                    <div class="p-3 bg-white/5 rounded-lg border border-white/10 flex flex-col justify-between items-center text-center min-h-[86px]">
+                        <p class="text-[10px] text-gray-300 uppercase font-bold tracking-wider leading-snug">In-Mandate Swapped</p>
+                        <p class="text-lg sm:text-xl font-bold text-yellow-300 mt-1" style="color: #fcd34d;" id="metric-rec-swaps">--</p>
+                    </div>
+                </div>
+                <div id="growth-metrics-empty" class="hidden text-center py-4 text-xs text-gray-400">
+                    No transactions executed in this session yet. Submit purchase requests in the AI Purchase Console to view live metrics.
+                </div>
             </div>
 
             <!-- Pipeline explainer strip -->
@@ -485,8 +528,17 @@
             </div>
 
             <!-- Catalog Grid -->
-            <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div class="col-span-3 text-center py-12 text-gray-400 text-sm">Loading merchant catalog...</div>
+            <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="col-span-full bg-white rounded-xl border border-gray-200 p-10 text-center shadow-sm">
+                    <div class="inline-flex items-center justify-center p-3 bg-indigo-50 rounded-full text-indigo-600 mb-3 animate-pulse">
+                        <svg class="w-6 h-6 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                    <p class="text-sm font-semibold text-gray-700">Loading verified merchant catalog...</p>
+                    <p class="text-xs text-gray-400 mt-1">Connecting to PehraPay AI product vault</p>
+                </div>
             </div>
         </section>
 
@@ -502,51 +554,61 @@
             </div>
 
             <!-- 6 Premium Stats Cards -->
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 items-stretch">
                 
                 <!-- Card 1: Total Money Controlled -->
-                <div class="bg-white p-4.5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between space-y-1">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Money Controlled</span>
-                    <span class="text-xl font-extrabold text-indigo-900" id="an-money-controlled">₹0</span>
-                    <span class="text-[9px] text-gray-400">Total authorized pool</span>
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between h-[108px] min-h-[108px]">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block truncate">Money Controlled</span>
+                    <div class="h-7 flex items-center">
+                        <span class="text-xl font-extrabold text-indigo-900" id="an-money-controlled">₹0</span>
+                    </div>
+                    <span class="text-[9px] text-gray-400 block truncate">Total authorized pool</span>
                 </div>
 
                 <!-- Card 2: Unauthorized Spending Prevented -->
-                <div class="bg-white p-4.5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between space-y-1">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Spending Prevented</span>
-                    <span class="text-xl font-extrabold text-green-600" id="an-spending-prevented">₹0</span>
-                    <span class="text-[9px] text-gray-400">Intercepted leakages</span>
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between h-[108px] min-h-[108px]">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block truncate">Spending Prevented</span>
+                    <div class="h-7 flex items-center">
+                        <span class="text-xl font-extrabold text-green-600" id="an-spending-prevented">₹0</span>
+                    </div>
+                    <span class="text-[9px] text-gray-400 block truncate">Intercepted leakages</span>
                 </div>
 
                 <!-- Card 3: Transactions Blocked -->
-                <div class="bg-white p-4.5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between space-y-1">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Blocked Requests</span>
-                    <span class="text-xl font-extrabold text-red-600" id="an-blocked-requests">0</span>
-                    <span class="text-[9px] text-gray-400">Out-of-mandate stops</span>
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between h-[108px] min-h-[108px]">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block truncate">Blocked Requests</span>
+                    <div class="h-7 flex items-center">
+                        <span class="text-xl font-extrabold text-red-600" id="an-blocked-requests">0</span>
+                    </div>
+                    <span class="text-[9px] text-gray-400 block truncate">Out-of-mandate stops</span>
                 </div>
 
                 <!-- Card 4: Human Reviews Triggered -->
-                <div class="bg-white p-4.5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between space-y-1">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Human Reviews</span>
-                    <span class="text-xl font-extrabold text-yellow-600" id="an-human-reviews">0</span>
-                    <span class="text-[9px] text-gray-400">Velocity/limit alerts</span>
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between h-[108px] min-h-[108px]">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block truncate">Human Reviews</span>
+                    <div class="h-7 flex items-center">
+                        <span class="text-xl font-extrabold text-yellow-600" id="an-human-reviews">0</span>
+                    </div>
+                    <span class="text-[9px] text-gray-400 block truncate">Velocity/limit alerts</span>
                 </div>
 
                 <!-- Card 5: Mandate Tampering Attempts -->
-                <div class="bg-white p-4.5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between space-y-1">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Tamper Attempts</span>
-                    <span class="text-xl font-extrabold text-red-700 flex items-center">
-                        <span id="an-tamper-attempts">0</span>
-                        <span class="ml-1 text-[9px] font-bold text-red-500 bg-red-100 px-1 rounded animate-pulse">STOPPED</span>
-                    </span>
-                    <span class="text-[9px] text-gray-400">HMAC checks failed</span>
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between h-[108px] min-h-[108px]">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block truncate">Tamper Attempts</span>
+                    <div class="h-7 flex items-center justify-between gap-1.5">
+                        <span class="text-xl font-extrabold text-red-700" id="an-tamper-attempts">0</span>
+                        <span class="text-[8px] font-bold text-red-600 bg-red-100 border border-red-200 px-1.5 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap">STOPPED</span>
+                    </div>
+                    <span class="text-[9px] text-gray-400 block truncate">HMAC checks failed</span>
                 </div>
 
                 <!-- Card 6: Top Rejection Reason -->
-                <div class="bg-white p-4.5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between space-y-1">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Top Block Reason</span>
-                    <span class="text-xs font-extrabold text-purple-800 uppercase tracking-tight truncate" id="an-top-reason" title="Top Rejection Reason">None</span>
-                    <span class="text-[9px] text-gray-400">Deterministic check</span>
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between h-[108px] min-h-[108px]">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block truncate">Top Block Reason</span>
+                    <div class="h-7 flex items-center">
+                        <span class="text-xs font-bold text-purple-800 bg-purple-50 border border-purple-200 px-2 py-1 rounded-md uppercase tracking-tight truncate max-w-full block" id="an-top-reason" title="Top Rejection Reason">None</span>
+                    </div>
+                    <span class="text-[9px] text-gray-400 block truncate">Deterministic check</span>
                 </div>
 
             </div>
@@ -564,9 +626,8 @@
                 <!-- Chart 2: Policy Failures -->
                 <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
                     <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Most Common Policy Failures</h3>
-                    <div style="position: relative; height:200px; width:100%">
+                    <div style="position: relative; height:220px; width:100%">
                         <canvas id="chartPolicyFailures"></canvas>
-                    </div>
                 </div>
 
                 <!-- Chart 3: Spending by Mandate -->
@@ -843,6 +904,7 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             loadMandates();
+            loadSandboxCatalog();
             loadCatalog();
             loadAuditLogs();
             checkKillSwitchStatus();
@@ -1015,8 +1077,42 @@
                         </div>`;
                     grid.appendChild(card);
                 });
+                await loadCatalogSummaryBanner();
             } catch(e) {
                 grid.innerHTML = `<div class="col-span-3 text-center py-12 text-red-400 text-sm">Failed to load catalog: ${e.message}</div>`;
+            }
+        }
+
+        // Live Demo Session Growth Summary Banner Loader (Priority 3: Strictly Real Query Data)
+        async function loadCatalogSummaryBanner() {
+            try {
+                const res = await fetch(`${API_BASE}/api/analytics/summary`);
+                if (!res.ok) return;
+                const stats = await res.json();
+                
+                const contentEl = document.getElementById("growth-metrics-content");
+                const emptyEl = document.getElementById("growth-metrics-empty");
+                
+                if (stats.total_requests === 0) {
+                    if (contentEl) contentEl.classList.add("hidden");
+                    if (emptyEl) emptyEl.classList.remove("hidden");
+                    return;
+                }
+                
+                if (contentEl) contentEl.classList.remove("hidden");
+                if (emptyEl) emptyEl.classList.add("hidden");
+                
+                const gmvEl = document.getElementById("metric-gmv");
+                const settledEl = document.getElementById("metric-settled");
+                const approvalEl = document.getElementById("metric-approval-rate");
+                const swapsEl = document.getElementById("metric-rec-swaps");
+                
+                if (gmvEl) gmvEl.textContent = `₹${stats.total_approved_value.toLocaleString("en-IN")}`;
+                if (settledEl) settledEl.textContent = `₹${stats.total_settled_value.toLocaleString("en-IN")}`;
+                if (approvalEl) approvalEl.textContent = `${stats.approval_rate}%`;
+                if (swapsEl) swapsEl.textContent = `${stats.rec_accepted_count}`;
+            } catch (e) {
+                console.warn("Failed to load catalog summary banner:", e);
             }
         }
 
@@ -1118,15 +1214,53 @@
                             label: 'Failures Caught',
                             data: [budgetExceeded, expiryCheck, categoryBlock, trustLevel, sigMismatch],
                             backgroundColor: '#6366F1',
-                            barThickness: 15
+                            borderRadius: 4,
+                            barThickness: 14,
+                            maxBarThickness: 16
                         }]
                     },
                     options: {
                         indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: { x: { grid: { display: false } }, y: { grid: { display: false } } }
+                        layout: {
+                            padding: {
+                                left: 6,
+                                right: 16,
+                                top: 6,
+                                bottom: 6
+                            }
+                        },
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                padding: 8,
+                                boxPadding: 4,
+                                cornerRadius: 6
+                            }
+                        },
+                        scales: { 
+                            x: { 
+                                grid: { 
+                                    display: true, 
+                                    color: '#F3F4F6',
+                                    drawBorder: false 
+                                },
+                                ticks: { 
+                                    precision: 0,
+                                    font: { size: 10 },
+                                    color: '#9CA3AF'
+                                }
+                            }, 
+                            y: { 
+                                grid: { display: false, drawBorder: false },
+                                ticks: {
+                                    font: { size: 11, weight: '600' },
+                                    color: '#4B5563',
+                                    padding: 12
+                                }
+                            } 
+                        }
                     }
                 });
 
@@ -1246,8 +1380,8 @@
             else el.classList.add("hidden");
         }
 
-        // Load catalog helper
-        async function loadCatalog() {
+        // Load sandbox catalog helper
+        async function loadSandboxCatalog() {
             try {
                 const res = await fetch(`${API_BASE}/api/catalog`);
                 const catalog = await res.json();
@@ -1276,6 +1410,13 @@
         let currentMandateFilter = "all";
 
         // Fetch and draw mandates grid (Page 2)
+        function applyPreset(mandateId, promptText) {
+            const dropdown = document.getElementById("p-mandate-id");
+            const textarea = document.getElementById("p-buyer-request");
+            if (dropdown) dropdown.value = mandateId;
+            if (textarea) textarea.value = promptText;
+        }
+
         async function loadMandates() {
             try {
                 const res = await fetch(`${API_BASE}/api/mandates`);
@@ -1477,16 +1618,18 @@
             }
         }
 
-        // Submit Purchase Request (Console Sandbox Pipeline View)
-        async function handlePurchase(e) {
-            e.preventDefault();
-            
+        // Core Purchase Pipeline Execution
+        async function executePurchaseRequest(isRecommendationAccepted = false) {
             const dropdown = document.getElementById("p-mandate-id");
             const buyerRequest = document.getElementById("p-buyer-request").value.trim();
             const mandateId = dropdown.value;
             
             if (!mandateId) {
                 alert("Please select an active mandate rule.");
+                return;
+            }
+            if (!buyerRequest) {
+                alert("Please enter a purchase request.");
                 return;
             }
             
@@ -1507,7 +1650,11 @@
                 const res = await fetch(`${API_BASE}/api/purchase`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ buyer_request: buyerRequest, mandate_id: mandateId })
+                    body: JSON.stringify({ 
+                        buyer_request: buyerRequest, 
+                        mandate_id: mandateId,
+                        is_recommendation_accepted: isRecommendationAccepted 
+                    })
                 });
                 
                 if (res.ok) {
@@ -1518,9 +1665,10 @@
                     // Render Steps 1-4
                     renderTimeline(data);
                     
-                    // Reload databases
+                    // Reload databases & metrics
                     loadMandates();
                     loadAuditLogs();
+                    loadCatalogSummaryBanner();
                 } else {
                     const err = await res.json();
                     alert(`Purchase pipeline error: ${err.detail || "Server error"}`);
@@ -1532,6 +1680,71 @@
                 submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
                 spinner.classList.add("hidden");
                 btnText.textContent = "Execute AI Purchase Pipeline";
+            }
+        }
+
+        async function handlePurchase(e) {
+            if (e) e.preventDefault();
+            await executePurchaseRequest(false);
+        }
+
+        // Priority 2: Accept & Switch to Recommended Item
+        async function acceptAndSwitchRecommendation(item, mandateId) {
+            const mandateSelect = document.getElementById("p-mandate-id");
+            const requestTextarea = document.getElementById("p-buyer-request");
+            if (mandateSelect && mandateId) mandateSelect.value = mandateId;
+            if (requestTextarea) requestTextarea.value = `Purchase 1 ${item}`;
+            
+            await executePurchaseRequest(true);
+        }
+
+        // Priority 1: Simulated Customer Payment Capture Webhook
+        async function simulatePaymentCapture(orderId) {
+            const btn = document.getElementById("btn-settle-capture");
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<span>⏳ Processing Webhook...</span>`;
+            }
+            try {
+                const res = await fetch(`${API_BASE}/api/webhooks/razorpay`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ order_id: orderId, event: "payment.captured" })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Webhook processing failed");
+                }
+                const data = await res.json();
+
+                // Update in-memory active data
+                if (activePipelineData) {
+                    activePipelineData.status = data.transaction_status;
+                    activePipelineData.payment_id = data.payment_id;
+                    activePipelineData.settlement_timestamp = data.settled_at;
+                }
+
+                // Update status badge on decision card
+                const badge = document.getElementById("p-status-badge");
+                if (badge) {
+                    badge.className = "text-[9px] bg-emerald-200 text-emerald-900 font-bold px-2 py-0.5 rounded border border-emerald-300";
+                    badge.textContent = "✅ PAID & SETTLED";
+                }
+
+                // Replace button with confirmed badge
+                if (btn) {
+                    btn.outerHTML = `<span class="inline-flex items-center space-x-1 text-xs font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 py-2.5 px-3 rounded-lg"><span>✓ Payment Confirmed & Settled</span></span>`;
+                }
+
+                // Refresh databases and live session activity
+                loadAuditLogs();
+                loadCatalogSummaryBanner();
+            } catch (e) {
+                alert(`Settlement Webhook Error: ${e.message}`);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<span>⚡ Simulate Customer Payment Capture</span>`;
+                }
             }
         }
 
@@ -1619,24 +1832,40 @@
                 
                 card.className = "p-6 rounded-xl border border-green-200 bg-green-50 shadow-md space-y-3";
 
+                const isSettled = data.status === "PAID_SETTLED";
+                const statusBadge = isSettled 
+                    ? `<span id="p-status-badge" class="text-[9px] bg-emerald-200 text-emerald-900 font-bold px-2 py-0.5 rounded border border-emerald-300">✅ PAID & SETTLED</span>`
+                    : `<span id="p-status-badge" class="text-[9px] bg-green-200 text-green-800 font-bold px-2 py-0.5 rounded">AUTHORIZED & ROUTED TO RAZORPAY</span>`;
+
+                const settleBtnHtml = data.order_id ? (isSettled 
+                    ? `<span class="inline-flex items-center space-x-1 text-xs font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 py-2.5 px-3 rounded-lg"><span>✓ Payment Confirmed & Settled</span></span>`
+                    : `<button id="btn-settle-capture" onclick="simulatePaymentCapture('${data.order_id}')" class="inline-flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-3.5 rounded-lg shadow transition"><span>⚡ Simulate Customer Payment Capture</span></button>`
+                ) : "";
+
                 const recHtml = data.recommendation ? `
-                    <div class="mt-3 bg-indigo-50 border border-indigo-200 rounded-lg p-3 flex items-start space-x-2">
-                        <span class="text-lg leading-none">💡</span>
-                        <div class="text-xs text-indigo-800">
-                            <p class="font-bold">PehraPay also found:</p>
-                            <p><span class="font-semibold">${data.recommendation.item}</span> · ₹${data.recommendation.price.toLocaleString("en-IN")} · ${data.recommendation.reason}</p>
+                    <div class="mt-3 bg-indigo-50 border border-indigo-200 rounded-lg p-3 space-y-2">
+                        <div class="flex items-start space-x-2">
+                            <span class="text-lg leading-none">💡</span>
+                            <div class="text-xs text-indigo-800">
+                                <p class="font-bold">PehraPay also found (In-Mandate Merchant Growth):</p>
+                                <p><span class="font-semibold">${data.recommendation.item}</span> · ₹${data.recommendation.price.toLocaleString("en-IN")} · ${data.recommendation.reason}</p>
+                            </div>
                         </div>
+                        <button type="button" onclick="acceptAndSwitchRecommendation('${data.recommendation.item.replace(/'/g, "\\'")}', '${activePipelineData ? (activePipelineData.mandate_id || '') : ''}')" class="inline-flex items-center space-x-1.5 bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold py-1.5 px-3 rounded-lg shadow-sm transition">
+                            <span>🔄 Accept & Switch to Recommended Item</span>
+                        </button>
                     </div>` : "";
 
                 card.innerHTML = `
                     <div class="flex justify-between items-center">
                         <span class="text-sm font-bold text-green-800 flex items-center">🛡️ APPROVED</span>
-                        <span class="text-[9px] bg-green-200 text-green-800 font-bold px-2 py-0.5 rounded">AUTHORIZED & ROUTED TO RAZORPAY</span>
+                        ${statusBadge}
                     </div>
                     <p class="text-xs text-green-700">Transaction meets all mandate requirements and has been cryptographically signed.</p>
                     <div class="text-xs space-y-1 text-gray-700 pt-2 border-t border-green-200">
                         <p><span class="font-semibold text-gray-500">Amount:</span> <span class="font-bold text-gray-900">₹${totalAmount.toLocaleString("en-IN")}</span></p>
                         <p><span class="font-semibold text-gray-500">Merchant:</span> <span class="font-mono text-gray-900">${data.intent.merchant_id}</span></p>
+                        ${data.order_id ? `<p><span class="font-semibold text-gray-500">Order ID:</span> <span class="font-mono text-gray-900 text-[11px]">${data.order_id}</span></p>` : ''}
                         <p class="text-[10px] text-gray-400">⚠️ Payment completes when buyer opens the link and completes checkout.</p>
                     </div>
                     ${recHtml}
@@ -1644,6 +1873,7 @@
                         <a href="${data.razorpay_url}" target="_blank" class="inline-block bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow transition">
                             Open Razorpay Checkout →
                         </a>
+                        ${settleBtnHtml}
                         <button onclick="openDecisionReceipt(activePipelineData)" class="inline-flex items-center space-x-1 border border-green-300 bg-white hover:bg-green-100 text-green-800 text-xs font-bold py-2.5 px-3 rounded-lg shadow-sm transition">
                             <span>📄 View Decision Receipt</span>
                         </button>
@@ -1796,10 +2026,25 @@
             const linkElem = document.getElementById("rcpt-rzp-link");
             const badgeElem = document.getElementById("rcpt-rzp-status-badge");
             
+            const isSettled = data.status === "PAID_SETTLED";
+
             if (data.razorpay_url) {
-                badgeElem.className = "text-[9px] font-bold px-2 py-0.5 rounded bg-green-100 text-green-800 border border-green-300";
-                badgeElem.textContent = "PAYMENT LINK CREATED";
-                linkElem.innerHTML = `<a href="${data.razorpay_url}" target="_blank" class="hover:underline text-indigo-600 font-bold">${data.razorpay_url} &rarr;</a>`;
+                if (isSettled) {
+                    badgeElem.className = "text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300";
+                    badgeElem.textContent = "✅ PAID & SETTLED";
+                } else {
+                    badgeElem.className = "text-[9px] font-bold px-2 py-0.5 rounded bg-green-100 text-green-800 border border-green-300";
+                    badgeElem.textContent = "PAYMENT LINK CREATED";
+                }
+                
+                linkElem.innerHTML = `
+                    <div class="space-y-1">
+                        <div><a href="${data.razorpay_url}" target="_blank" class="hover:underline text-indigo-600 font-bold break-all">${data.razorpay_url} &rarr;</a></div>
+                        ${data.order_id ? `<p class="text-[10px] text-gray-500 font-mono">Order ID: <span class="font-bold text-gray-800">${data.order_id}</span></p>` : ''}
+                        ${data.payment_id ? `<p class="text-[10px] text-emerald-700 font-mono font-bold">Payment ID: ${data.payment_id}</p>` : ''}
+                        ${data.settlement_timestamp ? `<p class="text-[10px] text-gray-400">Settled: ${new Date(data.settlement_timestamp * 1000).toLocaleString()}</p>` : ''}
+                    </div>
+                `;
             } else {
                 badgeElem.className = "text-[9px] font-bold px-2 py-0.5 rounded bg-gray-200 text-gray-700 border border-gray-300";
                 badgeElem.textContent = "GATEWAY BYPASSED (SKIPPED)";
@@ -1875,20 +2120,28 @@
                 const isReview = log.decision === "HUMAN_REVIEW";
                 
                 let badgeClass = "bg-red-100 text-red-700";
-                if (isApprove) badgeClass = "bg-green-100 text-green-700";
+                let statusLabel = log.decision.replace("_", " ");
+                if (isApprove) {
+                    if (log.status === "PAID_SETTLED") {
+                        badgeClass = "bg-emerald-100 text-emerald-800 border border-emerald-300";
+                        statusLabel = "PAID & SETTLED";
+                    } else {
+                        badgeClass = "bg-green-100 text-green-700";
+                    }
+                }
                 if (isReview) badgeClass = "bg-yellow-100 text-yellow-700";
                 
                 tr.innerHTML = `
                     <td class="py-3 px-4 font-medium text-gray-800">
                         <p class="font-bold">${log.buyer_request}</p>
-                        <p class="text-[10px] text-gray-400 font-semibold font-mono mt-0.5">Matched: ${log.intent_quantity}x ${log.intent_item}</p>
+                        <p class="text-[10px] text-gray-400 font-semibold font-mono mt-0.5">Matched: ${log.intent_quantity}x ${log.intent_item} ${log.order_id ? `· ${log.order_id}` : ''}</p>
                     </td>
                     <td class="py-3 px-4 text-right font-bold text-gray-900 whitespace-nowrap">₹${log.intent_total.toLocaleString("en-IN")}</td>
                     <td class="py-3 px-4 font-semibold text-gray-600 font-mono text-[10px]">${log.mandate_id} (v${log.mandate_version})</td>
                     <td class="py-3 px-4 text-center">
                         <div class="flex items-center justify-center space-x-2">
                             <span class="inline-block text-[9px] uppercase font-bold px-2.5 py-0.5 rounded-full ${badgeClass}">
-                                ${log.decision.replace("_", " ")}
+                                ${statusLabel}
                             </span>
                             <button onclick='event.stopPropagation(); openDecisionReceiptFromLog(${JSON.stringify(log).replace(/'/g, "&apos;")})' class="text-[10px] text-indigo-600 font-bold hover:underline bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded border border-indigo-200">
                                 📄 Receipt
@@ -1917,6 +2170,10 @@
                 decision: log.decision,
                 reason: log.reason,
                 mandate_id: log.mandate_id,
+                order_id: log.order_id,
+                payment_id: log.payment_id,
+                status: log.status,
+                settlement_timestamp: log.settlement_timestamp,
                 intent: {
                     item: log.intent_item,
                     quantity: log.intent_quantity,
@@ -1925,7 +2182,7 @@
                 },
                 product_category: "verified",
                 merchant_trust_level: 4.0,
-                razorpay_url: (log.decision === "APPROVE" || log.decision === "HUMAN_REVIEW") ? `https://rzp.io/rzp/order_${log.log_id}` : null
+                razorpay_url: (log.decision === "APPROVE" || log.decision === "HUMAN_REVIEW") ? (log.order_id ? `https://rzp.io/i/${log.order_id}` : `https://rzp.io/rzp/order_${log.log_id}`) : null
             };
             openDecisionReceipt(data);
         }
@@ -2010,10 +2267,12 @@
             
             if (log.decision === "APPROVE") {
                 dot7.className = "absolute left-[-22px] top-1.5 w-3 h-3 rounded-full bg-green-600 border-2 border-white";
-                desc7.innerHTML = `🟢 Razorpay Link Active: <a href="https://rzp.io/rzp/BwMjo6em" target="_blank" class="text-indigo-600 font-semibold hover:underline">Pay Order &rarr;</a>`;
+                const linkUrl = log.order_id ? (log.order_id.startsWith("order_mock_") ? `https://rzp.io/i/mock_${log.order_id}` : `https://rzp.io/i/${log.order_id}`) : "https://rzp.io/demo";
+                const isSettled = log.status === "PAID_SETTLED";
+                desc7.innerHTML = `🟢 Razorpay Link Active (${isSettled ? "✅ Settled" : "Authorized"}): <a href="${linkUrl}" target="_blank" class="text-indigo-600 font-semibold hover:underline">${log.order_id || "Open Checkout"} &rarr;</a>`;
             } else if (log.decision === "HUMAN_REVIEW") {
                 dot7.className = "absolute left-[-22px] top-1.5 w-3 h-3 rounded-full bg-yellow-500 border-2 border-white";
-                desc7.innerHTML = `🟡 Suspended: Awaiting Human approval key. <a href="https://rzp.io/rzp/BwMjo6em" target="_blank" class="text-indigo-600 font-semibold hover:underline">Approve & Pay &rarr;</a>`;
+                desc7.innerHTML = `🟡 Suspended: Awaiting Human approval key before routing.`;
             } else {
                 dot7.className = "absolute left-[-22px] top-1.5 w-3 h-3 rounded-full bg-gray-400 border-2 border-white";
                 desc7.textContent = "⚫ Razorpay Not Called: Transaction rejected at step 5/6.";

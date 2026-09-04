@@ -285,5 +285,8 @@ def run_day3_adversarial_tests():
         print(f"{r['scenario']:<30} | {r['expected']:<12} | {r['actual']:<15} | {r['pass_fail']:<6}")
     print("=========================================================================\n")
 
+    from backend.main import seed_database
+    seed_database()
+
 if __name__ == "__main__":
     run_day3_adversarial_tests()

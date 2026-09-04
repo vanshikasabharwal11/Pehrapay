@@ -197,5 +197,8 @@ def run_day4_integrity_tests():
     else:
         print("[FAIL] INTEGRITY CHECK FAILURE.")
 
+    from backend.main import seed_database
+    seed_database()
+
 if __name__ == "__main__":
     run_day4_integrity_tests()

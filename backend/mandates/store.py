@@ -91,11 +91,23 @@ class MandateStore:
             if len(columns) > 0 and ("version" not in columns or "human_review_threshold" not in columns):
                 cursor.execute("DROP TABLE mandates")
                 
-            # Check if mandate_version column is missing in existing audit_logs table
+            # Check PRAGMA for audit_logs migrations
             cursor.execute("PRAGMA table_info(audit_logs)")
             audit_columns = [col[1] for col in cursor.fetchall()]
-            if len(audit_columns) > 0 and "mandate_version" not in audit_columns:
-                cursor.execute("DROP TABLE audit_logs")
+            if len(audit_columns) > 0:
+                if "mandate_version" not in audit_columns:
+                    cursor.execute("DROP TABLE audit_logs")
+                else:
+                    if "order_id" not in audit_columns:
+                        cursor.execute("ALTER TABLE audit_logs ADD COLUMN order_id TEXT")
+                    if "payment_id" not in audit_columns:
+                        cursor.execute("ALTER TABLE audit_logs ADD COLUMN payment_id TEXT")
+                    if "status" not in audit_columns:
+                        cursor.execute("ALTER TABLE audit_logs ADD COLUMN status TEXT")
+                    if "settlement_timestamp" not in audit_columns:
+                        cursor.execute("ALTER TABLE audit_logs ADD COLUMN settlement_timestamp INTEGER")
+                    if "is_recommendation_accepted" not in audit_columns:
+                        cursor.execute("ALTER TABLE audit_logs ADD COLUMN is_recommendation_accepted INTEGER DEFAULT 0")
 
             # Create Mandates Table with composite primary key (mandate_id, version)
             cursor.execute("""
@@ -116,7 +128,7 @@ class MandateStore:
                 )
             """)
             
-            # Create Audit Logs Table including mandate_version
+            # Create Audit Logs Table including mandate_version and settlement lifecycle fields
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS audit_logs (
                     log_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -130,7 +142,12 @@ class MandateStore:
                     intent_total REAL NOT NULL,
                     intent_merchant_id TEXT NOT NULL,
                     decision TEXT NOT NULL,
-                    reason TEXT NOT NULL
+                    reason TEXT NOT NULL,
+                    order_id TEXT,
+                    payment_id TEXT,
+                    status TEXT,
+                    settlement_timestamp INTEGER,
+                    is_recommendation_accepted INTEGER DEFAULT 0
                 )
             """)
             
@@ -271,7 +288,13 @@ class MandateStore:
 
     def get_spent_amount(self, mandate_id: str, version: Optional[int] = None) -> float:
         """
-        Calculates total spent amount (sum of intent_total for APPROVED transactions) for a mandate version.
+        Calculates total reserved/spent amount (sum of intent_total for APPROVED transactions) for a mandate version.
+
+        NOTE ON BUDGET TIMING:
+        Budget reservation occurs at AUTHORIZATION time (when decision == 'APPROVE') to prevent 
+        concurrent agent requests from exceeding the cumulative cap before settlement completes.
+        Once the transaction is settled via webhook, its status transitions to 'PAID_SETTLED' 
+        without altering the reserved budget total (preventing double-deduction).
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
@@ -289,9 +312,12 @@ class MandateStore:
             return float(row[0]) if row and row[0] is not None else 0.0
 
     def log_audit(self, timestamp: int, mandate_id: str, buyer_request: str, 
-                  intent: dict, decision: str, reason: str, mandate_version: Optional[int] = None):
+                  intent: dict, decision: str, reason: str, mandate_version: Optional[int] = None,
+                  order_id: Optional[str] = None, payment_id: Optional[str] = None,
+                  status: Optional[str] = None, settlement_timestamp: Optional[int] = None,
+                  is_recommendation_accepted: bool = False) -> int:
         """
-        Appends a record to the policy audit log.
+        Appends a record to the policy audit log. Returns the inserted log_id.
         """
         if mandate_version is None:
             # Try to resolve currently active version
@@ -299,14 +325,17 @@ class MandateStore:
             mandate_version = mandate["version"] if mandate else 1
             
         intent_total = intent.get("price", 0.0) * intent.get("quantity", 0)
+        rec_acc_int = 1 if is_recommendation_accepted else 0
+        final_status = status or ("AUTHORIZED" if decision == "APPROVE" else ("SUSPENDED" if decision == "HUMAN_REVIEW" else "BLOCKED"))
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
                 INSERT INTO audit_logs (
                     timestamp, mandate_id, mandate_version, buyer_request, intent_item, 
                     intent_price, intent_quantity, intent_total, 
-                    intent_merchant_id, decision, reason
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    intent_merchant_id, decision, reason,
+                    order_id, payment_id, status, settlement_timestamp, is_recommendation_accepted
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 timestamp,
                 mandate_id,
@@ -318,9 +347,124 @@ class MandateStore:
                 intent_total,
                 intent.get("merchant_id", ""),
                 decision,
-                reason
+                reason,
+                order_id,
+                payment_id,
+                final_status,
+                settlement_timestamp,
+                rec_acc_int
             ))
             conn.commit()
+            return cursor.lastrowid
+
+    def get_audit_log_by_order_id(self, order_id: str) -> Optional[dict]:
+        """
+        Retrieves a single audit log entry by Razorpay order_id.
+        """
+        if not order_id:
+            return None
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM audit_logs WHERE order_id = ? ORDER BY log_id DESC LIMIT 1", (order_id,))
+            row = cursor.fetchone()
+            if not row:
+                return None
+            return {
+                "log_id": row[0],
+                "timestamp": row[1],
+                "mandate_id": row[2],
+                "mandate_version": row[3],
+                "buyer_request": row[4],
+                "intent_item": row[5],
+                "intent_price": row[6],
+                "intent_quantity": row[7],
+                "intent_total": row[8],
+                "intent_merchant_id": row[9],
+                "decision": row[10],
+                "reason": row[11],
+                "order_id": row[12] if len(row) > 12 else None,
+                "payment_id": row[13] if len(row) > 13 else None,
+                "status": row[14] if len(row) > 14 else (row[10] if len(row) > 10 else None),
+                "settlement_timestamp": row[15] if len(row) > 15 else None,
+                "is_recommendation_accepted": bool(row[16]) if len(row) > 16 else False
+            }
+
+    def update_transaction_settlement(self, order_id: str, payment_id: str, settlement_timestamp: int) -> Optional[dict]:
+        """
+        Idempotently updates an order's status from AUTHORIZED to PAID_SETTLED.
+        Returns the updated transaction dict, or None if order_id is not found.
+        """
+        record = self.get_audit_log_by_order_id(order_id)
+        if not record:
+            return None
+
+        # Idempotency: If already settled, return existing record without double-deduction or state corruption
+        if record.get("status") == "PAID_SETTLED":
+            return record
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE audit_logs 
+                SET status = 'PAID_SETTLED', payment_id = ?, settlement_timestamp = ?
+                WHERE order_id = ?
+            """, (payment_id, settlement_timestamp, order_id))
+            conn.commit()
+
+        return self.get_audit_log_by_order_id(order_id)
+
+    def get_analytics_summary(self) -> dict:
+        """
+        Computes real live-session analytics strictly from SQLite audit_logs table.
+        Zero fabricated metrics — every field derives directly from query results.
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            
+            # 1. Total Requests
+            cursor.execute("SELECT COUNT(*) FROM audit_logs")
+            total_requests = cursor.fetchone()[0] or 0
+            
+            # 2. Approved Count & Total Approved GMV
+            cursor.execute("SELECT COUNT(*), SUM(intent_total) FROM audit_logs WHERE decision = 'APPROVE'")
+            app_row = cursor.fetchone()
+            approved_count = app_row[0] or 0
+            total_approved_value = float(app_row[1] or 0.0)
+            
+            # 3. Settled Count & Total Settled Value
+            cursor.execute("SELECT COUNT(*), SUM(intent_total) FROM audit_logs WHERE status = 'PAID_SETTLED'")
+            set_row = cursor.fetchone()
+            settled_count = set_row[0] or 0
+            total_settled_value = float(set_row[1] or 0.0)
+            
+            # 4. Rejected Count
+            cursor.execute("SELECT COUNT(*) FROM audit_logs WHERE decision = 'REJECT'")
+            rejected_count = cursor.fetchone()[0] or 0
+            
+            # 5. Recommendation Acceptance Count
+            cursor.execute("SELECT COUNT(*) FROM audit_logs WHERE is_recommendation_accepted = 1")
+            rec_accepted_count = cursor.fetchone()[0] or 0
+            
+            # 6. Distinct Merchants with Approved Transactions
+            cursor.execute("SELECT COUNT(DISTINCT intent_merchant_id) FROM audit_logs WHERE decision = 'APPROVE' AND intent_merchant_id != ''")
+            distinct_merchants_count = cursor.fetchone()[0] or 0
+            
+            # Real calculated rates
+            approval_rate = round((approved_count / total_requests) * 100, 1) if total_requests > 0 else 0.0
+            rec_acceptance_rate = round((rec_accepted_count / approved_count) * 100, 1) if approved_count > 0 else 0.0
+            
+            return {
+                "total_requests": total_requests,
+                "approved_count": approved_count,
+                "total_approved_value": total_approved_value,
+                "settled_count": settled_count,
+                "total_settled_value": total_settled_value,
+                "rejected_count": rejected_count,
+                "approval_rate": approval_rate,
+                "rec_accepted_count": rec_accepted_count,
+                "rec_acceptance_rate": rec_acceptance_rate,
+                "distinct_merchants_count": distinct_merchants_count
+            }
 
     def get_audit_logs(self, mandate_id: Optional[str] = None) -> list:
         """
@@ -347,7 +491,12 @@ class MandateStore:
                     "intent_total": row[8],
                     "intent_merchant_id": row[9],
                     "decision": row[10],
-                    "reason": row[11]
+                    "reason": row[11],
+                    "order_id": row[12] if len(row) > 12 else None,
+                    "payment_id": row[13] if len(row) > 13 else None,
+                    "status": row[14] if len(row) > 14 and row[14] else (row[10] if len(row) > 10 else None),
+                    "settlement_timestamp": row[15] if len(row) > 15 else None,
+                    "is_recommendation_accepted": bool(row[16]) if len(row) > 16 else False
                 })
             return logs
 
