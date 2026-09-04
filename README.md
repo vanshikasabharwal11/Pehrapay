@@ -310,7 +310,7 @@ Every transaction produces an auditable receipt verifying all 6 policy checks.
 
 - **Backend Framework**: Python 3.10+ (FastAPI, Uvicorn, Pydantic)
 - **Payment Gateway**: Razorpay Test-Mode Python SDK (`razorpay`) — Orders API & Payment Links
-- **AI Intent Extraction**: Google Gemini API (`gemini-2.5-flash`) with local keyword fallback
+- **AI Intent Extraction**: Google Gemini API (`gemini-3.6-flash`) with local keyword fallback
 - **Storage & Audit Store**: SQLite3 (Structured Mandates, Audit Trails, and Settlement State)
 - **Cryptographic Security**: Python `hmac` and `hashlib` (HMAC-SHA256 tamper defense & request deduplication)
 - **Dashboard UI**: Single-Page Application (HTML5, Tailwind CSS, Vanilla JS, Chart.js)

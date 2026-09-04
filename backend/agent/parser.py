@@ -143,9 +143,9 @@ class AgentParser:
             try:
                 import google.generativeai as genai
                 genai.configure(api_key=self.api_key)
-                self.model = genai.GenerativeModel("gemini-2.5-flash")
+                self.model = genai.GenerativeModel("gemini-3.6-flash")
                 self.client_enabled = True
-                print("Gemini client successfully initialized.")
+                print("Gemini client successfully initialized with gemini-3.6-flash.")
             except ImportError:
                 print("Warning: 'google-generativeai' package not installed. Running in mock mode.")
                 self.client_enabled = False
