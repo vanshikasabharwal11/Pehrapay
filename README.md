@@ -425,16 +425,4 @@ python -m backend.tests.test_live_goal_resolution
 
 ---
 
-## 🏆 Hackathon Demo Script (4 Minutes)
-
-1. **AI-Readable Catalog Tab**: Show verified merchants, category filters, and live demo session growth metrics calculated directly from SQLite.
-2. **Preset Quick-Test #1 (Goal Discovery)**: Click `🎯 Goal Discovery` under the prompt box. Watch PehraPay resolve the non-exact request *"buy me coffee under ₹1000"* to the highest-trust matching item (`Organic Green Tea`, Trust 3.5).
-3. **Simulate Payment Capture**: In the decision card, click **"⚡ Simulate Customer Payment Capture"**. The simulated Razorpay webhook fires, and the status tag transitions in real-time to `✅ PAID & SETTLED`.
-4. **Accept In-Mandate Cross-Sell**: Click **"🔄 Accept & Switch to Recommended Item"** on the recommendation box. Watch PehraPay automatically re-route the alternative item through the full 4-stage pipeline.
-5. **Preset Quick-Test #2 (Category Breach)**: Click `🛑 Category Breach` (*"buy a mechanical keyboard for 3500"* against a groceries mandate). Watch the Policy Engine reject the request at Stage 3 with zero Razorpay calls.
-6. **Audit & Trace Inspection**: Open the **Transactions** tab to inspect the immutable SQLite audit record and full policy checklist.
-7. **Emergency Kill Switch Demonstration**: Toggle the `🚨 Emergency Kill Switch` button in the navbar. Attempt any purchase and verify that PehraPay immediately halts execution at the gateway perimeter with 0 API calls.
-
----
-
 *Built for the **Razorpay AI Hackathon** — Track 01: AI Growth & Agentic Commerce.*
